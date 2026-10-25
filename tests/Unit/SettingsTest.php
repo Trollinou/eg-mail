@@ -112,3 +112,4 @@ final class SettingsTest extends TestCase {
 		$this->assertSame( 3600, Settings::calculate_backoff_delay( 4 ) ); // 60 min.
 	}
 }
+

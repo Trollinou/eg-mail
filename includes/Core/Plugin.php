@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace EGMail\Core;
 
+use EGMail\Admin\Admin_Menu;
+use EGMail\API\Admin_Rest_Controller;
 use EGMail\Queue\Attachment_Spooler;
 use EGMail\Queue\Interceptor;
 use EGMail\Queue\Worker;
@@ -65,6 +67,21 @@ final class Plugin {
 
 		// 4. Initialisation du Worker d'arrière-plan.
 		$this->worker->init();
+
+		// 5. Initialisation différée de l'API REST sur rest_api_init.
+		add_action(
+			'rest_api_init',
+			function (): void {
+				$rest_controller = new Admin_Rest_Controller( $this->repository, $this->spooler );
+				$rest_controller->register_routes();
+			}
+		);
+
+		// 6. Initialisation Back-office isolée sous is_admin().
+		if ( is_admin() ) {
+			$admin_menu = new Admin_Menu( $this->repository, $this->settings );
+			$admin_menu->init();
+		}
 
 		// phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- Intervalle 1 minute indispensable pour le dépilement réactif.
 		add_filter( 'cron_schedules', [ $this, 'register_cron_schedules' ] );

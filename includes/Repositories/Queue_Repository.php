@@ -109,6 +109,27 @@ class Queue_Repository {
 	}
 
 	/**
+	 * Récupère un premier exemplaire représentatif d'un lot pour la prévisualisation.
+	 *
+	 * @param string $batch_id Identifiant de lot.
+	 * @return ?Queue_Item
+	 */
+	public function get_first_by_batch_id( string $batch_id ): ?Queue_Item {
+		/** @var literal-string $sql */
+		$sql   = "SELECT * FROM {$this->table_name} WHERE batch_id = %s LIMIT 1";
+		$query = $this->db->prepare( $sql, $batch_id );
+
+		/** @var ?object $row */
+		$row = $this->db->get_row( $query );
+		if ( ! is_object( $row ) ) {
+			return null;
+		}
+
+		/** @var object{id: int|string, batch_id: string, dedup_hash: string, status: string, priority: int|string, recipient: string, subject: string, message: string, headers?: ?string, attachments?: ?string, context_meta?: ?string, attempts: int|string, max_attempts: int|string, last_error?: ?string, created_at: string, scheduled_at: string, sent_at?: ?string} $row */
+		return Queue_Item::from_db_row( $row );
+	}
+
+	/**
 	 * Récupère le lot d'e-mails éligibles pour le Worker.
 	 *
 	 * @param int  $limit           Nombre maximal d'e-mails à dépiler.
@@ -382,5 +403,94 @@ class Queue_Repository {
 		}
 
 		return array_values( array_unique( $paths ) );
+	}
+
+	/**
+	 * Récupère les compteurs d'e-mails par statut pour les vues WP_List_Table.
+	 *
+	 * @return array<string, int>
+	 */
+	public function count_by_status(): array {
+		$query = "SELECT status, COUNT(*) AS cnt FROM {$this->table_name} GROUP BY status"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		/** @var array<int, object{status: string, cnt: int|string}> $results */
+		$results = $this->db->get_results( $query );
+		$counts  = [
+			'all'        => 0,
+			'pending'    => 0,
+			'processing' => 0,
+			'paused'     => 0,
+			'sent'       => 0,
+			'failed'     => 0,
+			'cancelled'  => 0,
+		];
+
+		if ( is_array( $results ) ) {
+			foreach ( $results as $row ) {
+				$cnt                    = (int) $row->cnt;
+				$counts[ $row->status ] = $cnt;
+				$counts['all']         += $cnt;
+			}
+		}
+
+		return $counts;
+	}
+
+	/**
+	 * Recherche et pagine les e-mails de la file pour WP_List_Table.
+	 *
+	 * @param array<string, string> $filters Filtres (status, search).
+	 * @param int                   $limit   Nombre d'éléments par page.
+	 * @param int                   $offset  Décalage.
+	 * @return array{items: array<int, Queue_Item>, total: int}
+	 */
+	public function search_queue( array $filters, int $limit = 20, int $offset = 0 ): array {
+		$where_clauses = [ '1=1' ];
+		$params        = [];
+
+		if ( ! empty( $filters['status'] ) && 'all' !== $filters['status'] ) {
+			$where_clauses[] = 'status = %s';
+			$params[]        = $filters['status'];
+		}
+
+		if ( ! empty( $filters['search'] ) ) {
+			$where_clauses[] = '(recipient LIKE %s OR subject LIKE %s)';
+			$like            = '%' . $this->db->esc_like( $filters['search'] ) . '%';
+			$params[]        = $like;
+			$params[]        = $like;
+		}
+
+		$where_sql = implode( ' AND ', $where_clauses );
+
+		// 1. Calcul du total.
+		/** @var literal-string $count_sql */
+		$count_sql = "SELECT COUNT(*) FROM {$this->table_name} WHERE {$where_sql}";
+		if ( ! empty( $params ) ) {
+			$count_query = $this->db->prepare( $count_sql, ...$params );
+		} else {
+			$count_query = $count_sql;
+		}
+		$total = (int) $this->db->get_var( $count_query );
+
+		// 2. Récupération des résultats paginés.
+		/** @var literal-string $select_sql */
+		$select_sql = "SELECT * FROM {$this->table_name} WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
+		$all_params = array_merge( $params, [ $limit, $offset ] );
+		$query      = $this->db->prepare( $select_sql, ...$all_params );
+
+		/** @var array<int, object> $rows */
+		$rows  = $this->db->get_results( $query );
+		$items = [];
+		if ( is_array( $rows ) ) {
+			foreach ( $rows as $row ) {
+				/** @var object{id: int|string, batch_id: string, dedup_hash: string, status: string, priority: int|string, recipient: string, subject: string, message: string, headers?: ?string, attachments?: ?string, context_meta?: ?string, attempts: int|string, max_attempts: int|string, last_error?: ?string, created_at: string, scheduled_at: string, sent_at?: ?string} $row */
+				$items[] = Queue_Item::from_db_row( $row );
+			}
+		}
+
+		return [
+			'items' => $items,
+			'total' => $total,
+		];
 	}
 }
