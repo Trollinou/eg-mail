@@ -72,6 +72,9 @@ final class Interceptor {
 		$priority   = $parsed_meta['priority'];
 		$batch_id   = ! empty( $parsed_meta['batch_id'] ) ? $parsed_meta['batch_id'] : $this->generate_batch_id( $subject );
 
+		// Si ce lot avait été précédemment annulé, on lève le marqueur d'annulation pour ce nouvel envoi.
+		Worker::clear_aborted_batch( $batch_id );
+
 		// 3. Spool sécurisé des pièces jointes avec déduplication par hash.
 		$attachments_raw = isset( $atts['attachments'] ) && is_array( $atts['attachments'] ) ? $atts['attachments'] : ( is_string( $atts['attachments'] ?? null ) ? [ $atts['attachments'] ] : [] );
 		$spooled_files   = $this->spooler->spool_attachments( $attachments_raw );
@@ -227,16 +230,16 @@ final class Interceptor {
 	 * Capture les métadonnées de contexte WordPress par écoute des filtres standards.
 	 */
 	public function capture_context_meta(): Context_Meta {
-		$content_type = apply_filters( 'wp_mail_content_type', 'text/plain' );
+		$content_type = apply_filters( 'wp_mail_content_type', '' );
 		$charset      = apply_filters( 'wp_mail_charset', get_bloginfo( 'charset' ) );
-		$from_email   = apply_filters( 'wp_mail_from', get_option( 'admin_email' ) );
-		$from_name    = apply_filters( 'wp_mail_from_name', get_bloginfo( 'name' ) );
+		$from_email   = apply_filters( 'wp_mail_from', '' );
+		$from_name    = apply_filters( 'wp_mail_from_name', '' );
 
 		return new Context_Meta(
-			content_type: is_string( $content_type ) ? $content_type : null,
-			charset: is_string( $charset ) ? $charset : null,
-			from_email: is_string( $from_email ) ? $from_email : null,
-			from_name: is_string( $from_name ) ? $from_name : null,
+			content_type: is_string( $content_type ) && '' !== $content_type ? $content_type : null,
+			charset: is_string( $charset ) && '' !== $charset ? $charset : null,
+			from_email: is_string( $from_email ) && '' !== $from_email ? $from_email : null,
+			from_name: is_string( $from_name ) && '' !== $from_name ? $from_name : null,
 		);
 	}
 

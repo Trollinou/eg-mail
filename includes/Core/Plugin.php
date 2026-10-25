@@ -101,7 +101,11 @@ final class Plugin {
 			wp_schedule_event( time(), 'daily', 'eg_mail_cron_cleaner' );
 		}
 
-		// 9. Support des commandes WP-CLI.
+		// 9. Filet de sécurité anti-blocage loopback HTTP (ex: LocalWP .local sur macOS).
+		add_action( 'wp_loaded', [ $this, 'maybe_run_overdue_worker' ], 20 );
+		add_action( 'shutdown', [ $this, 'maybe_run_overdue_worker' ], 20 );
+
+		// 10. Support des commandes WP-CLI.
 		if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
 			\WP_CLI::add_command(
 				'eg-mail worker run',
@@ -111,6 +115,26 @@ final class Plugin {
 				}
 			);
 		}
+	}
+
+	/**
+	 * Exécute directement le Worker si l'échéance WP-Cron est arrivée à terme mais que le loopback HTTP a échoué.
+	 */
+	public function maybe_run_overdue_worker(): void {
+		if ( wp_doing_cron() ) {
+			return;
+		}
+
+		$next_scheduled = wp_next_scheduled( 'eg_mail_cron_worker' );
+		if ( false === $next_scheduled || $next_scheduled > time() ) {
+			return;
+		}
+
+		// Replanifie l'échéance à +60s avant l'exécution pour maintenir la cadence horaire.
+		wp_clear_scheduled_hook( 'eg_mail_cron_worker' );
+		wp_schedule_event( time() + 60, 'eg_mail_every_minute', 'eg_mail_cron_worker' );
+
+		$this->worker->process_queue();
 	}
 
 	/**

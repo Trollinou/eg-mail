@@ -222,25 +222,38 @@ class Worker {
 	private function apply_context_filters( Queue_Item $item ): callable {
 		$callbacks = [];
 
-		if ( null !== $item->context_meta->content_type ) {
+		$has_content_type_header = false;
+		$has_from_header         = false;
+		foreach ( $item->headers as $header ) {
+			if ( 0 === stripos( $header, 'Content-Type:' ) ) {
+				$has_content_type_header = true;
+			}
+			if ( 0 === stripos( $header, 'From:' ) ) {
+				$has_from_header = true;
+			}
+		}
+
+		if ( ! $has_content_type_header && null !== $item->context_meta->content_type && '' !== $item->context_meta->content_type && 'text/plain' !== $item->context_meta->content_type ) {
 			$ct_cb                             = static fn(): string => $item->context_meta->content_type ?? 'text/plain';
 			add_filter( 'wp_mail_content_type', $ct_cb );
 			$callbacks['wp_mail_content_type'] = $ct_cb;
 		}
 
-		if ( null !== $item->context_meta->charset ) {
+		if ( null !== $item->context_meta->charset && '' !== $item->context_meta->charset ) {
 			$cs_cb                        = static fn(): string => $item->context_meta->charset ?? 'UTF-8';
 			add_filter( 'wp_mail_charset', $cs_cb );
 			$callbacks['wp_mail_charset'] = $cs_cb;
 		}
 
-		if ( null !== $item->context_meta->from_email ) {
+		$admin_email = get_option( 'admin_email' );
+		if ( ! $has_from_header && null !== $item->context_meta->from_email && '' !== $item->context_meta->from_email && $admin_email !== $item->context_meta->from_email ) {
 			$fe_cb                     = static fn(): string => $item->context_meta->from_email ?? '';
 			add_filter( 'wp_mail_from', $fe_cb );
 			$callbacks['wp_mail_from'] = $fe_cb;
 		}
 
-		if ( null !== $item->context_meta->from_name ) {
+		$blog_name = get_bloginfo( 'name' );
+		if ( ! $has_from_header && null !== $item->context_meta->from_name && '' !== $item->context_meta->from_name && $blog_name !== $item->context_meta->from_name ) {
 			$fn_cb                          = static fn(): string => $item->context_meta->from_name ?? '';
 			add_filter( 'wp_mail_from_name', $fn_cb );
 			$callbacks['wp_mail_from_name'] = $fn_cb;
@@ -260,15 +273,15 @@ class Worker {
 	 */
 	public function is_batch_aborted( string $batch_id ): bool {
 		$aborted = get_transient( self::ABORTED_BATCHES_TRANSIENT );
-		if ( ! is_array( $aborted ) ) {
+		if ( ! is_array( $aborted ) || ! isset( $aborted[ $batch_id ] ) || ! is_int( $aborted[ $batch_id ] ) ) {
 			return false;
 		}
 
-		return in_array( $batch_id, $aborted, true );
+		return ( time() - $aborted[ $batch_id ] ) < 60;
 	}
 
 	/**
-	 * Enregistre un lot dans la liste d'arrêt d'urgence.
+	 * Enregistre un lot dans la liste d'arrêt d'urgence (pendant le cycle actif du Worker).
 	 *
 	 * @param string $batch_id Identifiant de lot.
 	 */
@@ -278,9 +291,31 @@ class Worker {
 			$aborted = [];
 		}
 
-		if ( ! in_array( $batch_id, $aborted, true ) ) {
-			$aborted[] = $batch_id;
-			set_transient( self::ABORTED_BATCHES_TRANSIENT, $aborted, 3600 );
+		$aborted[ $batch_id ] = time();
+		set_transient( self::ABORTED_BATCHES_TRANSIENT, $aborted, 60 );
+	}
+
+	/**
+	 * Retire un lot de la liste d'arrêt d'urgence (lors d'un nouvel envoi avec le même identifiant).
+	 *
+	 * @param string $batch_id Identifiant de lot.
+	 */
+	public static function clear_aborted_batch( string $batch_id ): void {
+		$aborted = get_transient( self::ABORTED_BATCHES_TRANSIENT );
+		if ( ! is_array( $aborted ) ) {
+			return;
+		}
+
+		unset( $aborted[ $batch_id ] );
+		$key = array_search( $batch_id, $aborted, true );
+		if ( false !== $key ) {
+			unset( $aborted[ $key ] );
+		}
+
+		if ( empty( $aborted ) ) {
+			delete_transient( self::ABORTED_BATCHES_TRANSIENT );
+		} else {
+			set_transient( self::ABORTED_BATCHES_TRANSIENT, $aborted, 60 );
 		}
 	}
 
@@ -288,17 +323,20 @@ class Worker {
 	 * Tente de poser le verrou Mutex d'exécution du Worker.
 	 */
 	public function acquire_lock(): bool {
-		if ( false !== get_transient( self::MUTEX_TRANSIENT ) ) {
+		$lock_time = get_transient( self::MUTEX_TRANSIENT );
+		if ( false !== $lock_time && is_numeric( $lock_time ) && ( time() - (int) $lock_time ) < 55 ) {
 			return false;
 		}
 
+		delete_transient( self::MUTEX_TRANSIENT );
 		return set_transient( self::MUTEX_TRANSIENT, time(), 55 );
 	}
 
 	/**
-	 * Libère le verrou Mutex.
+	 * Libère le verrou Mutex et nettoie les marqueurs d'interruption de cycle.
 	 */
 	public function release_lock(): void {
 		delete_transient( self::MUTEX_TRANSIENT );
+		delete_transient( self::ABORTED_BATCHES_TRANSIENT );
 	}
 }

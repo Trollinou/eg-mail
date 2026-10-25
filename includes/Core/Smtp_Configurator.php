@@ -20,10 +20,44 @@ class Smtp_Configurator {
 	public function __construct( private Settings $settings ) {}
 
 	/**
-	 * Initialise le hook sur phpmailer_init.
+	 * Initialise le hook sur phpmailer_init et les filtres d'expéditeur par défaut.
 	 */
 	public function init(): void {
 		add_action( 'phpmailer_init', [ $this, 'configure_phpmailer' ] );
+		add_filter( 'wp_mail_from', [ $this, 'filter_default_from_email' ], 5 );
+		add_filter( 'wp_mail_from_name', [ $this, 'filter_default_from_name' ], 5 );
+	}
+
+	/**
+	 * Applique l'adresse d'expédition par défaut configurée dans EG Mail si l'adresse est celle par défaut de WordPress.
+	 *
+	 * @param string $from_email Adresse courante.
+	 */
+	public function filter_default_from_email( string $from_email ): string {
+		$configured = (string) $this->settings->get( 'smtp_from_email', '' );
+		if ( '' !== $configured && is_email( $configured ) ) {
+			if ( '' === $from_email || 0 === stripos( $from_email, 'wordpress@' ) || ! is_email( $from_email ) ) {
+				return $configured;
+			}
+		}
+
+		return $from_email;
+	}
+
+	/**
+	 * Applique le nom d'expéditeur par défaut configuré dans EG Mail si le nom est celui par défaut de WordPress.
+	 *
+	 * @param string $from_name Nom courant.
+	 */
+	public function filter_default_from_name( string $from_name ): string {
+		$configured = (string) $this->settings->get( 'smtp_from_name', '' );
+		if ( '' !== $configured ) {
+			if ( '' === $from_name || 'WordPress' === $from_name ) {
+				return $configured;
+			}
+		}
+
+		return $from_name;
 	}
 
 	/**

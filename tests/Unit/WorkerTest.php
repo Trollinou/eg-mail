@@ -104,6 +104,9 @@ final class WorkerTest extends TestCase {
 
 		$sent = $this->worker->run();
 		$this->assertSame( 0, $sent );
+
+		// Après la fin du cycle (release_lock), le marqueur d'annulation est purgé : un nouvel envoi avec le même ID n'est plus bloqué.
+		$this->assertFalse( $this->worker->is_batch_aborted( $aborted_batch_id ) );
 	}
 
 	/**
