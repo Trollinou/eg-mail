@@ -1,5 +1,7 @@
 .git
+.gitattributes
 .gitignore
+.distignore
 .editorconfig
 .DS_Store
 Thumbs.db

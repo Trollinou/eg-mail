@@ -72,7 +72,10 @@ composer test
 # 7. Compilation des assets frontend
 npm run build
 
-# 8. Création de l'archive ZIP autonome
+# 8. Synchronisation et montée de version SemVer (ex: 1.1.0)
+npm run version:sync -- 1.1.0
+
+# 9. Création de l'archive ZIP autonome de production (avec validation QA intégrée)
 npm run package
 ```
 
