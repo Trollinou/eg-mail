@@ -53,6 +53,28 @@ class Queue_List_Table extends WP_List_Table {
 	}
 
 	/**
+	 * Déclare les colonnes triables de la table.
+	 *
+	 * @return array<string, array{0: string, 1: bool}>
+	 */
+	public function get_sortable_columns(): array {
+		return [
+			'id'           => [ 'id', true ],
+			'recipient'    => [ 'recipient', false ],
+			'scheduled_at' => [ 'scheduled_at', false ],
+			'status'       => [ 'status', false ],
+			'priority'     => [ 'priority', false ],
+		];
+	}
+
+	/**
+	 * Message affiché lorsque la file d'attente ne contient aucun e-mail.
+	 */
+	public function no_items(): void {
+		esc_html_e( 'Aucun e-mail trouvé dans la file d\'attente.', 'eg-mail' );
+	}
+
+	/**
 	 * Génère les liens de filtrage par statut en haut de la table (Vues).
 	 *
 	 * @return array<string, string>
@@ -99,16 +121,25 @@ class Queue_List_Table extends WP_List_Table {
 	 * Prépare et pagine les éléments pour l'affichage.
 	 */
 	public function prepare_items(): void {
+		$columns               = $this->get_columns();
+		$hidden                = [];
+		$sortable              = $this->get_sortable_columns();
+		$this->_column_headers = [ $columns, $hidden, $sortable, 'recipient' ];
+
 		$per_page     = 20;
 		$current_page = $this->get_pagenum();
 		$offset       = ( $current_page - 1 ) * $per_page;
 
-		$status = Request::get_key( 'status', 'all' );
-		$search = Request::get_string( 's' );
+		$status  = Request::get_key( 'status', 'all' );
+		$search  = Request::get_string( 's' );
+		$orderby = Request::get_key( 'orderby', 'id' );
+		$order   = Request::get_key( 'order', 'desc' );
 
 		$filters = [
-			'status' => $status,
-			'search' => $search,
+			'status'  => $status,
+			'search'  => $search,
+			'orderby' => $orderby,
+			'order'   => $order,
 		];
 
 		$results     = $this->repository->search_queue( $filters, $per_page, $offset );

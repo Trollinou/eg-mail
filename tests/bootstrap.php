@@ -94,6 +94,40 @@ if ( ! function_exists( 'current_time' ) ) {
 	}
 }
 
+if ( ! function_exists( 'esc_html' ) ) {
+	function esc_html( string $text ): string {
+		return htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
+if ( ! function_exists( 'esc_html__' ) ) {
+	function esc_html__( string $text, string $domain = 'default' ): string {
+		return htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
+if ( ! function_exists( 'esc_attr' ) ) {
+	function esc_attr( string $text ): string {
+		return htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
+if ( ! function_exists( 'esc_url' ) ) {
+	function esc_url( string $url ): string {
+		return filter_var( $url, FILTER_SANITIZE_URL ) ?: $url;
+	}
+}
+
+if ( ! function_exists( 'wp_trim_words' ) ) {
+	function wp_trim_words( string $text, int $num_words = 55, string $more = '…' ): string {
+		$words = explode( ' ', $text );
+		if ( count( $words ) > $num_words ) {
+			return implode( ' ', array_slice( $words, 0, $num_words ) ) . $more;
+		}
+		return $text;
+	}
+}
+
 if ( ! function_exists( 'wp_cache_get' ) ) {
 	function wp_cache_get( string|int $key, string $group = '' ): mixed {
 		return false;
@@ -285,6 +319,59 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
 
 		public function get_status(): int {
 			return $this->status;
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_List_Table' ) ) {
+	class WP_List_Table {
+		/** @var array<int, mixed> */
+		public array $items = [];
+		/** @var array<string, mixed> */
+		protected array $_args = [];
+		/** @var ?array{0: array<string, string>, 1: array<int, string>, 2: array<string, array{0: string, 1: bool}>, 3?: string} */
+		protected ?array $_column_headers = null;
+		/** @var ?array<string, mixed> */
+		protected ?array $_pagination_args = null;
+
+		/**
+		 * @param array<string, mixed> $args
+		 */
+		public function __construct( array $args = [] ) {
+			$this->_args = $args;
+		}
+
+		public function get_pagenum(): int {
+			return 1;
+		}
+
+		/**
+		 * @param array<string, mixed> $args
+		 */
+		public function set_pagination_args( array $args ): void {
+			$this->_pagination_args = $args;
+		}
+
+		/**
+		 * @return array<string, string>
+		 */
+		public function get_columns(): array {
+			return [];
+		}
+
+		/**
+		 * @return array<string, array{0: string, 1: bool}>
+		 */
+		public function get_sortable_columns(): array {
+			return [];
+		}
+
+		/**
+		 * @return array{0: array<string, string>, 1: array<int, string>, 2: array<string, array{0: string, 1: bool}>, 3: string}
+		 */
+		public function get_column_info(): array {
+			/** @var array{0: array<string, string>, 1: array<int, string>, 2: array<string, array{0: string, 1: bool}>, 3: string} */
+			return $this->_column_headers ?? [ [], [], [], '' ];
 		}
 	}
 }
