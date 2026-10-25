@@ -6,6 +6,10 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+- Déplacement des interfaces d'administration vers un menu de premier niveau dédié **EG Mail** avec icône Dashicons `dashicons-email-alt2` (remplace l'emplacement sous le menu Outils).
+- Harmonisation des scripts de synchronisation de version SemVer (`scripts/version-sync.cjs`) et de packaging autonome (`scripts/package.cjs`).
+
 ## [1.0.0] - 2026-10-25
 
 ### Added
