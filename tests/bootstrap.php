@@ -232,6 +232,18 @@ if ( ! function_exists( 'register_rest_route' ) ) {
 	}
 }
 
+if ( ! function_exists( 'add_menu_page' ) ) {
+	function add_menu_page( string $page_title, string $menu_title, string $capability, string $menu_slug, ?callable $callback = null, string $icon_url = '', ?int $position = null ): string {
+		return 'toplevel_page_' . $menu_slug;
+	}
+}
+
+if ( ! function_exists( 'add_submenu_page' ) ) {
+	function add_submenu_page( string $parent_slug, string $page_title, string $menu_title, string $capability, string $menu_slug, ?callable $callback = null, ?int $position = null ): string {
+		return $parent_slug . '_page_' . $menu_slug;
+	}
+}
+
 if ( ! class_exists( 'WP_REST_Server' ) ) {
 	class WP_REST_Server {
 		public const READABLE  = 'GET';

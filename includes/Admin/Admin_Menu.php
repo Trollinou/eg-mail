@@ -20,6 +20,13 @@ class Admin_Menu {
 	public const PAGE_SETTINGS = 'eg-mail-settings';
 
 	/**
+	 * Identifiants d'écrans retournés lors de l'enregistrement des menus.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $hook_suffixes = [];
+
+	/**
 	 * Constructeur avec injection des dépendances.
 	 *
 	 * @param Queue_Repository $repository Dépôt de données.
@@ -39,38 +46,65 @@ class Admin_Menu {
 	}
 
 	/**
-	 * Enregistre les sous-pages sous le menu "Outils" de WordPress.
+	 * Enregistre le menu de premier niveau et ses sous-pages dans l'administration WordPress.
 	 */
 	public function register_menu_pages(): void {
-		// 1. Page principale : Campagnes & Lots.
-		add_submenu_page(
-			'tools.php',
+		// 1. Menu de premier niveau : EG Mail (icône dashicons-email-alt2).
+		$main_hook = add_menu_page(
 			__( 'EG Mail — Campagnes', 'eg-mail' ),
+			__( 'EG Mail', 'eg-mail' ),
+			'manage_options',
+			self::PAGE_BATCHES,
+			[ $this, 'render_batches_page' ],
+			'dashicons-email-alt2',
+			26
+		);
+
+		if ( is_string( $main_hook ) ) {
+			$this->hook_suffixes[] = $main_hook;
+		}
+
+		// 2. Sous-menu 1 : Campagnes & Lots (renommage du premier sous-menu par défaut).
+		$batches_hook = add_submenu_page(
+			self::PAGE_BATCHES,
 			__( 'EG Mail — Campagnes', 'eg-mail' ),
+			__( 'Campagnes & Lots', 'eg-mail' ),
 			'manage_options',
 			self::PAGE_BATCHES,
 			[ $this, 'render_batches_page' ]
 		);
 
-		// 2. Page détaillée : File d'attente FIFO.
-		add_submenu_page(
-			'tools.php',
+		if ( is_string( $batches_hook ) ) {
+			$this->hook_suffixes[] = $batches_hook;
+		}
+
+		// 3. Sous-menu 2 : File d'attente FIFO.
+		$queue_hook = add_submenu_page(
+			self::PAGE_BATCHES,
 			__( 'EG Mail — File d\'attente', 'eg-mail' ),
-			__( 'EG Mail — File d\'attente', 'eg-mail' ),
+			__( 'File d\'attente', 'eg-mail' ),
 			'manage_options',
 			self::PAGE_QUEUE,
 			[ $this, 'render_queue_page' ]
 		);
 
-		// 3. Page de configuration : Réglages & Quotas.
-		add_submenu_page(
-			'tools.php',
+		if ( is_string( $queue_hook ) ) {
+			$this->hook_suffixes[] = $queue_hook;
+		}
+
+		// 4. Sous-menu 3 : Réglages & Quotas.
+		$settings_hook = add_submenu_page(
+			self::PAGE_BATCHES,
 			__( 'EG Mail — Réglages', 'eg-mail' ),
-			__( 'EG Mail — Réglages', 'eg-mail' ),
+			__( 'Réglages', 'eg-mail' ),
 			'manage_options',
 			self::PAGE_SETTINGS,
 			[ $this, 'render_settings_page' ]
 		);
+
+		if ( is_string( $settings_hook ) ) {
+			$this->hook_suffixes[] = $settings_hook;
+		}
 	}
 
 	/**
@@ -79,11 +113,14 @@ class Admin_Menu {
 	 * @param string $hook_suffix Identifiant de l'écran admin courant.
 	 */
 	public function enqueue_assets( string $hook_suffix ): void {
-		$allowed_pages = [
-			'tools_page_' . self::PAGE_BATCHES,
-			'tools_page_' . self::PAGE_QUEUE,
-			'tools_page_' . self::PAGE_SETTINGS,
-		];
+		$allowed_pages = array_merge(
+			$this->hook_suffixes,
+			[
+				'toplevel_page_' . self::PAGE_BATCHES,
+				self::PAGE_BATCHES . '_page_' . self::PAGE_QUEUE,
+				self::PAGE_BATCHES . '_page_' . self::PAGE_SETTINGS,
+			]
+		);
 
 		if ( ! in_array( $hook_suffix, $allowed_pages, true ) ) {
 			return;
@@ -144,7 +181,7 @@ class Admin_Menu {
 		echo '<nav class="nav-tab-wrapper wp-clearfix" style="margin-bottom: 20px;">';
 		foreach ( $tabs as $page => $label ) {
 			$active_class = ( $page === $active_page ) ? ' nav-tab-active' : '';
-			$url          = admin_url( 'tools.php?page=' . $page );
+			$url          = admin_url( 'admin.php?page=' . $page );
 			echo '<a href="' . esc_url( $url ) . '" class="nav-tab' . esc_attr( $active_class ) . '">' . esc_html( $label ) . '</a>';
 		}
 		echo '</nav>';

@@ -72,7 +72,7 @@ class Queue_List_Table extends WP_List_Table {
 			'cancelled'  => __( 'Annulés', 'eg-mail' ),
 		];
 
-		$base_url = admin_url( 'tools.php?page=' . Admin_Menu::PAGE_QUEUE );
+		$base_url = admin_url( 'admin.php?page=' . Admin_Menu::PAGE_QUEUE );
 
 		foreach ( $labels as $status => $label ) {
 			$cnt = $counts[ $status ] ?? 0;

@@ -6,10 +6,10 @@ Ce document décrit le fonctionnement et la configuration de l'extension **EG Ma
 
 ## 1. Accès au Back-Office
 
-Les interfaces d'EG Mail sont accessibles dans l'administration WordPress via le menu **Outils** :
-- **Outils > EG Mail — Campagnes** : Suivi des envois groupés, barres de progression et arrêt d'urgence.
-- **Outils > EG Mail — File d'attente** : Exploration détaillée de la file FIFO message par message.
-- **Outils > EG Mail — Réglages** : Configuration des quotas, paramètres SMTP et fenêtre nocturne.
+Les interfaces d'EG Mail sont accessibles dans l'administration WordPress via le menu dédié de premier niveau **EG Mail** (icône `dashicons-email-alt2`) :
+- **EG Mail > Campagnes & Lots** : Suivi des envois groupés, barres de progression et arrêt d'urgence.
+- **EG Mail > File d'attente** : Exploration détaillée de la file FIFO message par message.
+- **EG Mail > Réglages** : Configuration des quotas, paramètres SMTP et fenêtre nocturne.
 
 ---
 
@@ -58,7 +58,7 @@ wp_mail( $recipients, $subject, $message, $headers, $attachments );
 
 ## 5. Politique de Rétention & Purge Quotidienne
 
-- **Rétention des e-mails envoyés (15 jours par défaut)** : Configurable dans **Outils > EG Mail — Réglages**.
+- **Rétention des e-mails envoyés (15 jours par défaut)** : Configurable dans **EG Mail > Réglages**.
 - **Nettoyage automatique** : Une tâche récurrente quotidienne `eg_mail_cron_cleaner` purge les e-mails ayant le statut `sent` dont la date d'envoi dépasse la période de rétention choisie.
 - **Garbage Collector du spool** : Les pièces jointes stockées sur disque devenues orphelines suite à la purge sont automatiquement détruites pour préserver l'espace disque.
 
