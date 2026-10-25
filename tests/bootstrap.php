@@ -26,6 +26,14 @@ if ( ! defined( 'EG_MAIL_PLUGIN_URL' ) ) {
 	define( 'EG_MAIL_PLUGIN_URL', 'https://example.com/wp-content/plugins/eg-mail/' );
 }
 
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+	define( 'HOUR_IN_SECONDS', 3600 );
+}
+
+if ( ! defined( 'DAY_IN_SECONDS' ) ) {
+	define( 'DAY_IN_SECONDS', 86400 );
+}
+
 // Mémoire de simulation pour options et transients.
 $GLOBALS['eg_test_options']    = [];
 $GLOBALS['eg_test_transients'] = [];
@@ -33,6 +41,19 @@ $GLOBALS['eg_test_transients'] = [];
 if ( ! function_exists( '__' ) ) {
 	function __( string $text, string $domain = 'default' ): string {
 		return $text;
+	}
+}
+
+if ( ! function_exists( '_n' ) ) {
+	function _n( string $single, string $plural, int $number, string $domain = 'default' ): string {
+		return 1 === $number ? $single : $plural;
+	}
+}
+
+if ( ! function_exists( 'wp_date' ) ) {
+	function wp_date( string $format, ?int $timestamp = null, ?DateTimeZone $timezone = null ): string {
+		$time = null !== $timestamp ? $timestamp : time();
+		return date( $format, $time );
 	}
 }
 

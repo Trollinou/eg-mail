@@ -24,10 +24,12 @@ final class Admin_Rest_Controller {
 	 *
 	 * @param Queue_Repository   $repository Dépôt de données.
 	 * @param Attachment_Spooler $spooler    Gestionnaire de pièces jointes.
+	 * @param ?Worker            $worker     Worker d'envoi.
 	 */
 	public function __construct(
 		private Queue_Repository $repository,
-		private Attachment_Spooler $spooler
+		private Attachment_Spooler $spooler,
+		private ?Worker $worker = null
 	) {}
 
 	/**
@@ -90,6 +92,16 @@ final class Admin_Rest_Controller {
 			[
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'handle_purge_pending' ],
+				'permission_callback' => [ $this, 'check_permission' ],
+			]
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/queue/process',
+			[
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'handle_process_queue' ],
 				'permission_callback' => [ $this, 'check_permission' ],
 			]
 		);
@@ -286,6 +298,25 @@ final class Admin_Rest_Controller {
 					/* translators: %d: nombre de messages réimportés en pause */
 					__( '%d message(s) réimportés depuis le snapshot de secours (en statut "En pause").', 'eg-mail' ),
 					$restored
+				),
+			]
+		);
+	}
+
+	/**
+	 * Déclenche manuellement un cycle de traitement de la file d'attente par le Worker.
+	 */
+	public function handle_process_queue(): WP_REST_Response {
+		$sent_count = null !== $this->worker ? $this->worker->run() : 0;
+
+		return new WP_REST_Response(
+			[
+				'success'    => true,
+				'sent_count' => $sent_count,
+				'message'    => sprintf(
+					/* translators: %d: nombre d'e-mails envoyés */
+					_n( '%d e-mail a été expédié avec succès.', '%d e-mails ont été expédiés avec succès.', $sent_count, 'eg-mail' ),
+					$sent_count
 				),
 			]
 		);
