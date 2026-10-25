@@ -26,7 +26,10 @@ if ( ! defined( 'EG_MAIL_PLUGIN_URL' ) ) {
 	define( 'EG_MAIL_PLUGIN_URL', 'https://example.com/wp-content/plugins/eg-mail/' );
 }
 
-// Stubs WordPress légers pour l'exécution unitaire isolée.
+// Mémoire de simulation pour options et transients.
+$GLOBALS['eg_test_options']    = [];
+$GLOBALS['eg_test_transients'] = [];
+
 if ( ! function_exists( '__' ) ) {
 	function __( string $text, string $domain = 'default' ): string {
 		return $text;
@@ -109,6 +112,24 @@ if ( ! function_exists( 'apply_filters' ) ) {
 	}
 }
 
+if ( ! function_exists( 'remove_filter' ) ) {
+	function remove_filter( string $tag, callable $function_to_remove, int $priority = 10 ): bool {
+		return true;
+	}
+}
+
+if ( ! function_exists( 'add_action' ) ) {
+	function add_action( string $tag, callable $function_to_add, int $priority = 10, int $accepted_args = 1 ): true {
+		return true;
+	}
+}
+
+if ( ! function_exists( 'remove_action' ) ) {
+	function remove_action( string $tag, callable $function_to_remove, int $priority = 10 ): bool {
+		return true;
+	}
+}
+
 if ( ! function_exists( 'get_bloginfo' ) ) {
 	function get_bloginfo( string $show = '' ): string {
 		return 'UTF-8';
@@ -117,12 +138,45 @@ if ( ! function_exists( 'get_bloginfo' ) ) {
 
 if ( ! function_exists( 'get_option' ) ) {
 	function get_option( string $option, mixed $default = false ): mixed {
-		return $default;
+		return $GLOBALS['eg_test_options'][ $option ] ?? $default;
+	}
+}
+
+if ( ! function_exists( 'update_option' ) ) {
+	function update_option( string $option, mixed $value, mixed $autoload = null ): bool {
+		$GLOBALS['eg_test_options'][ $option ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+	function get_transient( string $transient ): mixed {
+		return $GLOBALS['eg_test_transients'][ $transient ] ?? false;
+	}
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+	function set_transient( string $transient, mixed $value, int $expiration = 0 ): bool {
+		$GLOBALS['eg_test_transients'][ $transient ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+	function delete_transient( string $transient ): bool {
+		unset( $GLOBALS['eg_test_transients'][ $transient ] );
+		return true;
 	}
 }
 
 if ( ! function_exists( 'is_email' ) ) {
 	function is_email( string $email ): string|false {
 		return filter_var( $email, FILTER_VALIDATE_EMAIL ) ? $email : false;
+	}
+}
+
+if ( ! function_exists( 'wp_mail' ) ) {
+	function wp_mail( mixed $to, string $subject, string $message, mixed $headers = '', mixed $attachments = [] ): bool {
+		return true;
 	}
 }

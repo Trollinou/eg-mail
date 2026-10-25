@@ -135,3 +135,4 @@ final class InterceptorTest extends TestCase {
 		$this->assertSame( $expected, $batch_id );
 	}
 }
+

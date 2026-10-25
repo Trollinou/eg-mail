@@ -112,3 +112,4 @@ final class BackupIntegrationTest extends TestCase {
 		$this->assertSame( 1, $restored );
 	}
 }
+

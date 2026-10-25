@@ -9,11 +9,14 @@ namespace EGMail\Core;
 
 use EGMail\Queue\Attachment_Spooler;
 use EGMail\Queue\Interceptor;
+use EGMail\Queue\Worker;
 use EGMail\Repositories\Queue_Repository;
 
 final class Plugin {
 
 	private static ?self $instance = null;
+
+	private Settings $settings;
 
 	private Queue_Repository $repository;
 
@@ -21,13 +24,20 @@ final class Plugin {
 
 	private Interceptor $interceptor;
 
+	private Smtp_Configurator $smtp_configurator;
+
+	private Worker $worker;
+
 	/**
 	 * Constructeur privé (Singleton).
 	 */
 	private function __construct() {
-		$this->repository  = new Queue_Repository();
-		$this->spooler     = new Attachment_Spooler();
-		$this->interceptor = new Interceptor( $this->repository, $this->spooler );
+		$this->settings          = new Settings();
+		$this->repository        = new Queue_Repository();
+		$this->spooler           = new Attachment_Spooler();
+		$this->interceptor       = new Interceptor( $this->repository, $this->spooler );
+		$this->smtp_configurator = new Smtp_Configurator( $this->settings );
+		$this->worker            = new Worker( $this->repository, $this->spooler, $this->settings );
 	}
 
 	/**
@@ -50,6 +60,12 @@ final class Plugin {
 		// 2. Initialisation de l'intercepteur transparent wp_mail().
 		$this->interceptor->init();
 
+		// 3. Initialisation du configurateur SMTP et persistance KeepAlive.
+		$this->smtp_configurator->init();
+
+		// 4. Initialisation du Worker d'arrière-plan.
+		$this->worker->init();
+
 		// phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- Intervalle 1 minute indispensable pour le dépilement réactif.
 		add_filter( 'cron_schedules', [ $this, 'register_cron_schedules' ] );
 	}
@@ -69,6 +85,27 @@ final class Plugin {
 			];
 		}
 		return $schedules;
+	}
+
+	/**
+	 * Accès au gestionnaire de paramètres.
+	 */
+	public function get_settings(): Settings {
+		return $this->settings;
+	}
+
+	/**
+	 * Accès au configurateur SMTP.
+	 */
+	public function get_smtp_configurator(): Smtp_Configurator {
+		return $this->smtp_configurator;
+	}
+
+	/**
+	 * Accès au Worker.
+	 */
+	public function get_worker(): Worker {
+		return $this->worker;
 	}
 
 	/**
