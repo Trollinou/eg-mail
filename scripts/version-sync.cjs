@@ -304,3 +304,4 @@ if (results.warnings.length > 0) {
 
 console.log(`\x1b[32m✨ Synchronisation terminée avec succès pour la version \x1b[1m${targetVersion}\x1b[0m\n`);
 process.exit(0);
+
