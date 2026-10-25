@@ -35,8 +35,7 @@ archive.pipe( output );
 archive.glob( '**/*', {
 	cwd: rootDir,
 	ignore: [ zipName, ...ignorePatterns, ...ignorePatterns.map( ( p ) => `${ p }/**` ) ],
-	prefix: pluginSlug,
-} );
+}, { prefix: pluginSlug } );
 
 archive.finalize();
 

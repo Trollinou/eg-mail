@@ -144,3 +144,4 @@ final class AdminRestControllerTest extends TestCase {
 		$this->assertSame( 50, $data['purged'] );
 	}
 }
+

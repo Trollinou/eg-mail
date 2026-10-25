@@ -54,3 +54,20 @@ $headers = [
 wp_mail( $recipients, $subject, $message, $headers, $attachments );
 ```
 
+---
+
+## 5. Politique de Rétention & Purge Quotidienne
+
+- **Rétention des e-mails envoyés (15 jours par défaut)** : Configurable dans **Outils > EG Mail — Réglages**.
+- **Nettoyage automatique** : Une tâche récurrente quotidienne `eg_mail_cron_cleaner` purge les e-mails ayant le statut `sent` dont la date d'envoi dépasse la période de rétention choisie.
+- **Garbage Collector du spool** : Les pièces jointes stockées sur disque devenues orphelines suite à la purge sont automatiquement détruites pour préserver l'espace disque.
+
+---
+
+## 6. Résilience & Plan de Reprise d'Activité (PRA)
+
+- **Snapshot miroir automatique** : À chaque modification de la file d'attente, l'état des messages en transit est synchronisé de façon atomique dans `queue-snapshot.json`.
+- **Intégration EG Backup & Restore** : Le répertoire de spool est automatiquement déclaré dans les emplacements de sauvegarde recommandés.
+- **Réconciliation post-restauration** : En cas de divergence détectée entre la base SQL et le snapshot disque (ex: restauration de base désynchronisée), un bandeau d'alerte apparaît dans les réglages et permet en un clic de réimporter les e-mails orphelins en statut `paused`.
+
+

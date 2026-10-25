@@ -7,6 +7,11 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Unreleased]
 
 ### Added
+- Tâche récurrente quotidienne `Cleaner` (`includes/Queue/Cleaner.php`) hookée sur `eg_mail_cron_cleaner` pour la purge automatique des e-mails envoyés selon la durée de rétention (15 jours par défaut).
+- Nettoyage automatique des pièces jointes orphelines du disque (`spool`) et resynchronisation atomique du snapshot PRA (`queue-snapshot.json`) lors de chaque cycle de rétention.
+- Méthode de purge en base de données `Queue_Repository::purge_sent( int $retention_days )`.
+- Script de packaging autonome (`scripts/package.cjs`) générant l'archive ZIP prête pour la production avec le préfixe racine `eg-mail/`.
+- Suite complète de tests unitaires PHPUnit pour le nettoyeur `Cleaner` (`tests/Unit/CleanerTest.php`).
 - Menu et sous-menus d'administration WordPress sous **Outils** (`tools.php`) : Campagnes / Lots, File d'attente FIFO et Réglages avancés.
 - Contrôleur REST API `Admin_Rest_Controller` sécurisé (`/wp-json/eg-mail/v1/`) avec validation déclarative, permissions administrateur et nonce : mise en pause, reprise, annulation, forçage d'envoi immédiat diurne (`force-day`), prévisualisation d'e-mail avec assainissement HTML (`wp_kses_post`), purge de messages en attente et réconciliation de snapshot PRA.
 - Interface des Campagnes et Lots `Batch_List_Table` avec barres de progression dynamiques, statuts visuels et modale de prévisualisation accessible (fermeture touche Échap / clic backdrop).

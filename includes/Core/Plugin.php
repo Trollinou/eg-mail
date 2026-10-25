@@ -10,6 +10,7 @@ namespace EGMail\Core;
 use EGMail\Admin\Admin_Menu;
 use EGMail\API\Admin_Rest_Controller;
 use EGMail\Queue\Attachment_Spooler;
+use EGMail\Queue\Cleaner;
 use EGMail\Queue\Interceptor;
 use EGMail\Queue\Worker;
 use EGMail\Repositories\Queue_Repository;
@@ -30,6 +31,8 @@ final class Plugin {
 
 	private Worker $worker;
 
+	private Cleaner $cleaner;
+
 	/**
 	 * Constructeur privé (Singleton).
 	 */
@@ -40,6 +43,7 @@ final class Plugin {
 		$this->interceptor       = new Interceptor( $this->repository, $this->spooler );
 		$this->smtp_configurator = new Smtp_Configurator( $this->settings );
 		$this->worker            = new Worker( $this->repository, $this->spooler, $this->settings );
+		$this->cleaner           = new Cleaner( $this->repository, $this->spooler, $this->settings );
 	}
 
 	/**
@@ -68,7 +72,10 @@ final class Plugin {
 		// 4. Initialisation du Worker d'arrière-plan.
 		$this->worker->init();
 
-		// 5. Initialisation différée de l'API REST sur rest_api_init.
+		// 5. Initialisation du nettoyeur quotidien de rétention.
+		$this->cleaner->init();
+
+		// 6. Initialisation différée de l'API REST sur rest_api_init.
 		add_action(
 			'rest_api_init',
 			function (): void {
@@ -77,7 +84,7 @@ final class Plugin {
 			}
 		);
 
-		// 6. Initialisation Back-office isolée sous is_admin().
+		// 7. Initialisation Back-office isolée sous is_admin().
 		if ( is_admin() ) {
 			$admin_menu = new Admin_Menu( $this->repository, $this->settings );
 			$admin_menu->init();
@@ -144,5 +151,12 @@ final class Plugin {
 	 */
 	public function get_interceptor(): Interceptor {
 		return $this->interceptor;
+	}
+
+	/**
+	 * Accès au nettoyeur quotidien.
+	 */
+	public function get_cleaner(): Cleaner {
+		return $this->cleaner;
 	}
 }
