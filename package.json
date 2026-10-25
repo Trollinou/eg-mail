@@ -9,7 +9,9 @@
     "build": "npm run build:js && npm run build:css",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
+    "lint:js": "eslint src/",
     "lint:fix": "eslint src/ --fix",
+    "version:sync": "node scripts/version-sync.cjs",
     "package": "node scripts/package.cjs"
   },
   "keywords": [
@@ -23,14 +25,15 @@
   "license": "GPL-2.0-or-later",
   "devDependencies": {
     "@eslint/js": "^9.14.0",
+    "adm-zip": "^0.6.1",
     "archiver": "^7.0.1",
     "esbuild": "^0.24.0",
     "eslint": "^9.14.0",
     "globals": "^15.12.0",
+    "minimatch": "^10.2.6",
     "rtlcss": "^4.3.0",
     "sass": "^1.80.6",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.13.0"
   }
 }
-

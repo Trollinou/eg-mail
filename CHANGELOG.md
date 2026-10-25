@@ -6,6 +6,8 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-25
+
 ### Added
 - Tâche récurrente quotidienne `Cleaner` (`includes/Queue/Cleaner.php`) hookée sur `eg_mail_cron_cleaner` pour la purge automatique des e-mails envoyés selon la durée de rétention (15 jours par défaut).
 - Nettoyage automatique des pièces jointes orphelines du disque (`spool`) et resynchronisation atomique du snapshot PRA (`queue-snapshot.json`) lors de chaque cycle de rétention.
