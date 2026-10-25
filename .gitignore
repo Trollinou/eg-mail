@@ -1,0 +1,31 @@
+# Dépendances Dev
+node_modules/
+vendor/
+
+# Assets compilés (générés par le build)
+assets/css/*.css
+assets/css/*.css.map
+assets/js/*.js
+assets/js/*.js.map
+build/
+dist/
+*.zip
+
+# Caches d'outils QA & Tests
+.phpunit.cache/
+.phpcs.cache
+.eslintcache
+.phpstan.cache/
+
+# Fichiers temporaires & Spool local
+uploads/
+*.tmp
+*.log
+
+# Système d'exploitation & IDEs
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace

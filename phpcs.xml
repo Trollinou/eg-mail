@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Modern_WP_PHP84_Standards" xsi:noNamespaceSchemaLocation="vendor/squizlabs/php_codesniffer/phpcs.xsd">
+    <description>Standard WordPress 7.1+ moderne avec PHP 8.4 strict et architecture PSR-4.</description>
+
+    <!-- 1. EXÉCUTION & PERFORMANCE -->
+    <arg name="colors"/>
+    <arg value="sp"/>
+    <arg name="extensions" value="php"/>
+    <arg name="parallel" value="8"/>
+    <arg name="cache" value=".phpcs.cache"/>
+    <config name="ignore_warnings_on_exit" value="0"/>
+
+    <!-- Cibles : WordPress 7.1 et PHP 8.4 minimum -->
+    <config name="minimum_wp_version" value="7.1"/>
+    <config name="testVersion" value="8.4-"/>
+
+    <!-- 2. PÉRIMÈTRE -->
+    <file>eg-mail.php</file>
+    <file>uninstall.php</file>
+    <file>includes</file>
+
+    <exclude-pattern>/vendor/*</exclude-pattern>
+    <exclude-pattern>/node_modules/*</exclude-pattern>
+    <exclude-pattern>/build/*</exclude-pattern>
+    <exclude-pattern>/dist/*</exclude-pattern>
+    <exclude-pattern>/assets/*</exclude-pattern>
+    <exclude-pattern>/tests/*</exclude-pattern>
+    <exclude-pattern>/includes/lib/*</exclude-pattern>
+    <exclude-pattern>*/index.php</exclude-pattern>
+
+    <!-- 3. SOCLE WORDPRESS & COMPATIBILITÉ PHP 8.4 -->
+    <rule ref="WordPress-Core">
+        <!-- Autoriser le nommage PSR-4 (PascalCase) -->
+        <exclude name="WordPress.Files.FileName"/>
+        <!-- Pas de conditions Yoda (inutile avec PHPStan Level 8 + strict_types) -->
+        <exclude name="WordPress.PHP.YodaConditions"/>
+    </rule>
+
+    <rule ref="WordPress-Extra">
+        <!-- Autoriser l'opérateur Elvis ?: et la syntaxe courte des tableaux [] -->
+        <exclude name="Universal.Operators.DisallowShortTernary"/>
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+    </rule>
+
+    <rule ref="PHPCompatibilityWP"/>
+
+    <!-- 4. IMPOSER PHP 8.4 MODERNE (strict_types=1 et tableaux courts []) -->
+    <!-- Force la présence de declare(strict_types=1); dans chaque fichier -->
+    <rule ref="Generic.PHP.RequireStrictTypes"/>
+    <!-- Interdit les vieux array() au profit de [] pour une cohérence totale -->
+    <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+
+    <!-- 5. I18N & CAPACITÉS -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="eg-mail"/>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="WordPress.WP.Capabilities">
+        <properties>
+            <property name="custom_capabilities" type="array" />
+        </properties>
+    </rule>
+
+    <!-- 6. EXCEPTIONS ARCHITECTURALES CIBLÉES (Principe du moindre privilège) -->
+    <!-- Autoriser uniquement error_log() (et pas var_dump/print_r) dans le Logger -->
+    <rule ref="WordPress.PHP.DevelopmentFunctions.error_log_error_log">
+        <exclude-pattern>includes/Utils/Logger.php</exclude-pattern>
+    </rule>
+
+    <!-- Autoriser les requêtes $wpdb directes uniquement dans les Repositories (PreparedSQL reste actif !) -->
+    <rule ref="WordPress.DB.DirectDatabaseQuery.DirectQuery">
+        <exclude-pattern>includes/Repositories/*</exclude-pattern>
+    </rule>
+
+    <!-- Centralisation de la lecture $_POST / $_GET / $_REQUEST dans Request.php -->
+    <rule ref="WordPress.Security.NonceVerification">
+        <exclude-pattern>includes/Utils/Request.php</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.Security.ValidatedSanitizedInput">
+        <exclude-pattern>includes/Utils/Request.php</exclude-pattern>
+    </rule>
+
+    <!-- Faux positif PHPCompatibility sur $this dans les Enums PHP 8.1+ -->
+    <rule ref="PHPCompatibility.Variables.ForbiddenThisUseContexts">
+        <exclude-pattern>includes/Enums/*</exclude-pattern>
+    </rule>
+</ruleset>

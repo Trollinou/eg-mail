@@ -1,0 +1,33 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+    level: 8
+    phpVersion: 80400 # PHP 8.4 strict
+
+    # =========================================================================
+    # 1. RIGUEUR D'ANALYSE (Qualité maximale sans le bruit de phpstan-strict-rules)
+    # =========================================================================
+    treatPhpDocTypesAsCertain: false
+    checkUninitializedProperties: true
+    checkBenevolentUnionTypes: true
+    checkExplicitMixedMissingReturn: true
+    checkFunctionNameCase: true
+    checkInternalClassCaseSensitivity: true
+    checkMissingCallableSignature: true
+    checkTooWideReturnTypesInProtectedAndPublicMethods: true
+    reportUnmatchedIgnoredErrors: true
+
+    # =========================================================================
+    # 2. PÉRIMÈTRE D'ANALYSE
+    # =========================================================================
+    paths:
+        - eg-mail.php
+        - uninstall.php
+        - includes/
+
+    excludePaths:
+        - includes/lib/* (?)
+
+    bootstrapFiles:
+        - tests/phpstan/bootstrap.php
