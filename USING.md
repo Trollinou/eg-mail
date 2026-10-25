@@ -54,6 +54,8 @@ $headers = [
 wp_mail( $recipients, $subject, $message, $headers, $attachments );
 ```
 
+> Pour une documentation exhaustive de l'ensemble des en-têtes, des niveaux de priorité, du mode bypass et des exemples complets, consultez le guide dédié : **[DEVELOPER.md](DEVELOPER.md)**.
+
 ---
 
 ## 5. Politique de Rétention & Purge Quotidienne

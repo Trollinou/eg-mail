@@ -21,7 +21,7 @@
     "queue",
     "batch"
   ],
-  "author": "EG Team",
+  "author": "Etienne Gagnon",
   "license": "GPL-2.0-or-later",
   "devDependencies": {
     "@eslint/js": "^9.14.0",

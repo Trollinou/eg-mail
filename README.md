@@ -81,6 +81,14 @@ npm run package
 
 ---
 
+## Documentation
+
+- **[USING.md](USING.md)** : Guide utilisateur pour les administrateurs (interface back-office, réglages de quotas, plage nocturne, suivi des campagnes et plan de reprise d'activité).
+- **[DEVELOPER.md](DEVELOPER.md)** : Guide complet pour les développeurs (headers `X-Queue-*`, niveaux de priorité, bypass immédiat, capture de contexte et exemples de code).
+- **[CHANGELOG.md](CHANGELOG.md)** : Historique des versions et évolutions.
+
+---
+
 ## Licence
 
 Ce projet est distribué sous licence GNU General Public License v2 ou supérieure.
