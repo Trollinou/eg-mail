@@ -7,6 +7,11 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Unreleased]
 
 ### Added
+- Intercepteur transparent `Interceptor` sur le filtre `pre_wp_mail` : gestion du bypass immédiat, capture dynamique du contexte (`wp_mail_content_type`, `wp_mail_charset`, `wp_mail_from`, `wp_mail_from_name`), éclatement des destinataires multiples et regroupement automatique par lot `batch_id`.
+- Moteur d'ordonnancement nocturne calculant dynamiquement `scheduled_at` pour les priorités basses (>= 20) selon la fenêtre nocturne.
+- Intégration de sauvegarde et résilience `Backup_Integration` : enregistrement du spool auprès d'EG Backup & Restore via `eg_backup_registered_locations`, écriture atomique du snapshot `queue-snapshot.json` et réconciliation automatique des messages orphelins en pause.
+- Orchestrateur central `Plugin` singleton initialisant les services et déclarant l'intervalle WP-Cron d'une minute `eg_mail_every_minute`.
+- Tests unitaires PHPUnit couvrant l'interception, le bypass, le parsing d'en-têtes et le snapshot miroir.
 - Modèle de données SQL pour la table `{$wpdb->prefix}eg_mail_queue` avec index optimisés pour le dépilement, le quota horaire et l'anti-doublon.
 - Énumérations PHP 8.4 typées `Queue_Status` et `Queue_Priority`.
 - DTOs immuables `readonly class` : `Queue_Item`, `Context_Meta`, et `Batch_Summary`.

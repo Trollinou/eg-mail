@@ -31,3 +31,4 @@ final class QueuePriorityTest extends TestCase {
 		$this->assertFalse( Queue_Priority::LOW->is_bypass() );
 	}
 }
+

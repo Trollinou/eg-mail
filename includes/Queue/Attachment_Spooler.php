@@ -9,7 +9,7 @@ namespace EGMail\Queue;
 
 use EGMail\Core\Activator;
 
-final class Attachment_Spooler {
+class Attachment_Spooler {
 
 	/**
 	 * Retourne le chemin absolu du dossier de spool.

@@ -37,3 +37,4 @@ final class QueueStatusTest extends TestCase {
 		$this->assertFalse( Queue_Status::CANCELLED->can_be_cancelled() );
 	}
 }
+

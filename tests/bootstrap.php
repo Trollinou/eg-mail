@@ -61,6 +61,12 @@ if ( ! function_exists( 'sanitize_file_name' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_key' ) ) {
+	function sanitize_key( string $key ): string {
+		return strtolower( preg_replace( '/[^a-z0-9_-]/i', '', $key ) ?? $key );
+	}
+}
+
 if ( ! function_exists( 'wp_delete_file' ) ) {
 	function wp_delete_file( string $file ): bool {
 		return file_exists( $file ) ? unlink( $file ) : false;
@@ -88,5 +94,35 @@ if ( ! function_exists( 'wp_cache_set' ) ) {
 if ( ! function_exists( 'wp_cache_delete' ) ) {
 	function wp_cache_delete( string|int $key, string $group = '' ): bool {
 		return true;
+	}
+}
+
+if ( ! function_exists( 'add_filter' ) ) {
+	function add_filter( string $tag, callable $function_to_add, int $priority = 10, int $accepted_args = 1 ): true {
+		return true;
+	}
+}
+
+if ( ! function_exists( 'apply_filters' ) ) {
+	function apply_filters( string $tag, mixed $value, mixed ...$args ): mixed {
+		return $value;
+	}
+}
+
+if ( ! function_exists( 'get_bloginfo' ) ) {
+	function get_bloginfo( string $show = '' ): string {
+		return 'UTF-8';
+	}
+}
+
+if ( ! function_exists( 'get_option' ) ) {
+	function get_option( string $option, mixed $default = false ): mixed {
+		return $default;
+	}
+}
+
+if ( ! function_exists( 'is_email' ) ) {
+	function is_email( string $email ): string|false {
+		return filter_var( $email, FILTER_VALIDATE_EMAIL ) ? $email : false;
 	}
 }

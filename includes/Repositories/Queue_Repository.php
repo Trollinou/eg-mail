@@ -13,7 +13,7 @@ use EGMail\Enums\Queue_Priority;
 use EGMail\Enums\Queue_Status;
 use wpdb;
 
-final class Queue_Repository {
+class Queue_Repository {
 
 	private const CACHE_GROUP = 'eg_mail_cache';
 

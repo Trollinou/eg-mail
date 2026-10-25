@@ -99,3 +99,4 @@ final class AttachmentSpoolerTest extends TestCase {
 		unlink( $tmp_file );
 	}
 }
+

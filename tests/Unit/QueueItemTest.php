@@ -57,3 +57,4 @@ final class QueueItemTest extends TestCase {
 		$this->assertSame( 'user@example.com', $exported['recipient'] );
 	}
 }
+
