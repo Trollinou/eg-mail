@@ -132,12 +132,39 @@ if ( ! function_exists( 'remove_filter' ) ) {
 
 if ( ! function_exists( 'add_action' ) ) {
 	function add_action( string $tag, callable $function_to_add, int $priority = 10, int $accepted_args = 1 ): true {
+		$GLOBALS['wp_actions_registered'][ $tag ][] = [
+			'callback' => $function_to_add,
+			'priority' => $priority,
+		];
 		return true;
+	}
+}
+
+if ( ! function_exists( 'has_action' ) ) {
+	function has_action( string $tag, mixed $function_to_check = false ): int|bool {
+		if ( empty( $GLOBALS['wp_actions_registered'][ $tag ] ) ) {
+			return false;
+		}
+
+		if ( false === $function_to_check ) {
+			return true;
+		}
+
+		foreach ( $GLOBALS['wp_actions_registered'][ $tag ] as $entry ) {
+			if ( $entry['callback'] === $function_to_check ) {
+				return $entry['priority'];
+			}
+		}
+
+		return false;
 	}
 }
 
 if ( ! function_exists( 'remove_action' ) ) {
 	function remove_action( string $tag, callable $function_to_remove, int $priority = 10 ): bool {
+		if ( isset( $GLOBALS['wp_actions_registered'][ $tag ] ) ) {
+			unset( $GLOBALS['wp_actions_registered'][ $tag ] );
+		}
 		return true;
 	}
 }

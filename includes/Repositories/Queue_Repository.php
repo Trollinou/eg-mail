@@ -493,4 +493,30 @@ class Queue_Repository {
 			'total' => $total,
 		];
 	}
+
+	/**
+	 * Purge les e-mails envoyés avec succès dont la date d'envoi dépasse la période de rétention.
+	 *
+	 * @param int $retention_days Nombre de jours de rétention.
+	 * @return int Nombre d'e-mails supprimés.
+	 */
+	public function purge_sent( int $retention_days ): int {
+		if ( $retention_days < 1 ) {
+			$retention_days = 15;
+		}
+
+		/** @var literal-string $sql */
+		$sql   = "DELETE FROM {$this->table_name}
+			WHERE status = 'sent' AND sent_at < DATE_SUB(NOW(), INTERVAL %d DAY)";
+		$query = $this->db->prepare( $sql, $retention_days );
+
+		if ( ! is_string( $query ) ) {
+			return 0;
+		}
+
+		$result = $this->db->query( $query );
+		wp_cache_delete( 'batch_summaries', self::CACHE_GROUP );
+
+		return is_int( $result ) ? $result : 0;
+	}
 }
