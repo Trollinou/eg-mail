@@ -84,7 +84,7 @@ final class Settings {
 		$night_start = (string) $this->get( 'night_start', '22:00' );
 		$night_end   = (string) $this->get( 'night_end', '06:00' );
 
-		$current_hi = gmdate( 'H:i', $time );
+		$current_hi = wp_date( 'H:i', $time );
 
 		if ( $night_start > $night_end ) {
 			// Plage chevauchant minuit (ex: 22h00 à 06h00).

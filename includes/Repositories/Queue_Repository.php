@@ -179,8 +179,10 @@ class Queue_Repository {
 	 * Compte le nombre d'e-mails envoyés lors des 60 dernières minutes glissantes.
 	 */
 	public function count_sent_in_last_hour(): int {
-		$query = "SELECT COUNT(*) FROM {$this->table_name}
-			WHERE status = 'sent' AND sent_at >= DATE_SUB(NOW(), INTERVAL 60 MINUTE)"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$one_hour_ago = wp_date( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS );
+		/** @var literal-string $sql */
+		$sql   = "SELECT COUNT(*) FROM {$this->table_name} WHERE status = 'sent' AND sent_at >= %s";
+		$query = $this->db->prepare( $sql, $one_hour_ago );
 
 		return (int) $this->db->get_var( $query );
 	}
@@ -509,10 +511,11 @@ class Queue_Repository {
 			$retention_days = 15;
 		}
 
+		$cutoff = wp_date( 'Y-m-d H:i:s', time() - ( $retention_days * DAY_IN_SECONDS ) );
+
 		/** @var literal-string $sql */
-		$sql   = "DELETE FROM {$this->table_name}
-			WHERE status = 'sent' AND sent_at < DATE_SUB(NOW(), INTERVAL %d DAY)";
-		$query = $this->db->prepare( $sql, $retention_days );
+		$sql   = "DELETE FROM {$this->table_name} WHERE status = 'sent' AND sent_at < %s";
+		$query = $this->db->prepare( $sql, $cutoff );
 
 		if ( ! is_string( $query ) ) {
 			return 0;

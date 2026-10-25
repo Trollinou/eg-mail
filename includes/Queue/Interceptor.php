@@ -259,7 +259,7 @@ final class Interceptor {
 		$night_start = is_array( $settings ) && isset( $settings['night_start'] ) && is_string( $settings['night_start'] ) ? $settings['night_start'] : '22:00';
 		$night_end   = is_array( $settings ) && isset( $settings['night_end'] ) && is_string( $settings['night_end'] ) ? $settings['night_end'] : '06:00';
 
-		$current_hour_minute = gmdate( 'H:i', $now_timestamp );
+		$current_hour_minute = wp_date( 'H:i', $now_timestamp );
 
 		// Vérifie si l'heure actuelle est dans la fenêtre nocturne.
 		$is_in_night_window = false;
@@ -276,12 +276,12 @@ final class Interceptor {
 		}
 
 		// Si hors de la plage nocturne en journée (ex: 14h30), programmer pour aujourd'hui à l'heure de début nocturne.
-		$today_date = gmdate( 'Y-m-d', $now_timestamp );
+		$today_date = wp_date( 'Y-m-d', $now_timestamp );
 		$target     = $today_date . ' ' . $night_start . ':00';
 
 		// Si l'heure cible est déjà passée aujourd'hui (cas rare de plage diurne terminée), reporter à demain.
 		if ( strtotime( $target ) < $now_timestamp ) {
-			$target = gmdate( 'Y-m-d', strtotime( '+1 day', $now_timestamp ) ) . ' ' . $night_start . ':00';
+			$target = wp_date( 'Y-m-d', strtotime( '+1 day', $now_timestamp ) ) . ' ' . $night_start . ':00';
 		}
 
 		return $target;

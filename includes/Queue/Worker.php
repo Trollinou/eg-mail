@@ -197,7 +197,7 @@ class Worker {
 			);
 		} else {
 			$delay_seconds    = Settings::calculate_backoff_delay( $attempts );
-			$new_scheduled_at = gmdate( 'Y-m-d H:i:s', time() + $delay_seconds );
+			$new_scheduled_at = wp_date( 'Y-m-d H:i:s', time() + $delay_seconds );
 
 			$this->repository->update_status(
 				$item->id,

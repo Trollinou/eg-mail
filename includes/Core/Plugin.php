@@ -79,7 +79,7 @@ final class Plugin {
 		add_action(
 			'rest_api_init',
 			function (): void {
-				$rest_controller = new Admin_Rest_Controller( $this->repository, $this->spooler );
+				$rest_controller = new Admin_Rest_Controller( $this->repository, $this->spooler, $this->worker );
 				$rest_controller->register_routes();
 			}
 		);
@@ -92,6 +92,25 @@ final class Plugin {
 
 		// phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- Intervalle 1 minute indispensable pour le dépilement réactif.
 		add_filter( 'cron_schedules', [ $this, 'register_cron_schedules' ] );
+
+		// 8. Auto-planification de sécurité si les tâches récurrentes ne sont pas encore enregistrées.
+		if ( ! wp_next_scheduled( 'eg_mail_cron_worker' ) ) {
+			wp_schedule_event( time(), 'eg_mail_every_minute', 'eg_mail_cron_worker' );
+		}
+		if ( ! wp_next_scheduled( 'eg_mail_cron_cleaner' ) ) {
+			wp_schedule_event( time(), 'daily', 'eg_mail_cron_cleaner' );
+		}
+
+		// 9. Support des commandes WP-CLI.
+		if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
+			\WP_CLI::add_command(
+				'eg-mail worker run',
+				function (): void {
+					$sent = $this->worker->run();
+					\WP_CLI::success( sprintf( 'Worker exécuté avec succès : %d e-mail(s) envoyé(s).', $sent ) );
+				}
+			);
+		}
 	}
 
 	/**

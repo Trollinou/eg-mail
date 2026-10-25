@@ -198,6 +198,7 @@ class Admin_Menu {
 
 		echo '<div class="wrap eg-mail-wrap">';
 		echo '<h1 class="wp-heading-inline">' . esc_html__( 'EG Mail — Suivi des Campagnes & Lots', 'eg-mail' ) . '</h1>';
+		echo '<button type="button" class="button button-primary eg-mail-btn-process" style="margin-left: 10px;">' . esc_html__( 'Dépiler la file maintenant', 'eg-mail' ) . '</button>';
 		echo '<hr class="wp-header-end">';
 
 		$this->render_nav_tabs( self::PAGE_BATCHES );
@@ -218,6 +219,7 @@ class Admin_Menu {
 
 		echo '<div class="wrap eg-mail-wrap">';
 		echo '<h1 class="wp-heading-inline">' . esc_html__( 'EG Mail — Journal Détaillé de la File d\'Attente', 'eg-mail' ) . '</h1>';
+		echo '<button type="button" class="button button-primary eg-mail-btn-process" style="margin-left: 10px;">' . esc_html__( 'Dépiler la file maintenant', 'eg-mail' ) . '</button>';
 		echo '<button type="button" class="button button-secondary eg-mail-btn-purge" style="margin-left: 10px;">' . esc_html__( 'Vider toute la file', 'eg-mail' ) . '</button>';
 		echo '<hr class="wp-header-end">';
 

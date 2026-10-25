@@ -121,6 +121,18 @@ document.addEventListener( 'DOMContentLoaded', () => {
 		void postAction( '/pra/reconcile' );
 	} );
 
+	// 6b. Bouton "Dépiler la file maintenant" (Exécution manuelle du Worker).
+	document.addEventListener( 'click', ( evt ) => {
+		const target = ( evt.target as HTMLElement ).closest( '.eg-mail-btn-process' );
+		if ( ! target ) {
+			return;
+		}
+
+		target.setAttribute( 'disabled', 'disabled' );
+		target.textContent = i18n.loading;
+		void postAction( '/queue/process' );
+	} );
+
 	// 7. Modale de prévisualisation du message.
 	const modal = document.getElementById( 'eg-mail-preview-modal' );
 	const subjectSpan = document.getElementById( 'eg-mail-preview-subject' );

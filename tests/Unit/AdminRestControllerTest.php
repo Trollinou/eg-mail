@@ -143,5 +143,22 @@ final class AdminRestControllerTest extends TestCase {
 		$this->assertTrue( $data['success'] );
 		$this->assertSame( 50, $data['purged'] );
 	}
+
+	/**
+	 * Vérifie le déclenchement du Worker via l'endpoint REST /queue/process.
+	 */
+	public function test_handle_process_queue(): void {
+		$worker = $this->createMock( \EGMail\Queue\Worker::class );
+		$worker->expects( $this->once() )
+			->method( 'run' )
+			->willReturn( 12 );
+
+		$controller = new Admin_Rest_Controller( $this->repository, $this->spooler, $worker );
+		$response   = $controller->handle_process_queue();
+		$data       = $response->get_data();
+
+		$this->assertTrue( $data['success'] );
+		$this->assertSame( 12, $data['sent_count'] );
+	}
 }
 
