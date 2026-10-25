@@ -70,6 +70,18 @@ if ( ! function_exists( 'sanitize_key' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+	function sanitize_text_field( string $str ): string {
+		return strip_tags( trim( $str ) );
+	}
+}
+
+if ( ! function_exists( 'sanitize_email' ) ) {
+	function sanitize_email( string $email ): string {
+		return filter_var( $email, FILTER_SANITIZE_EMAIL ) ?: '';
+	}
+}
+
 if ( ! function_exists( 'wp_delete_file' ) ) {
 	function wp_delete_file( string $file ): bool {
 		return file_exists( $file ) ? unlink( $file ) : false;
@@ -178,5 +190,62 @@ if ( ! function_exists( 'is_email' ) ) {
 if ( ! function_exists( 'wp_mail' ) ) {
 	function wp_mail( mixed $to, string $subject, string $message, mixed $headers = '', mixed $attachments = [] ): bool {
 		return true;
+	}
+}
+
+if ( ! function_exists( 'current_user_can' ) ) {
+	function current_user_can( string $capability ): bool {
+		return true;
+	}
+}
+
+if ( ! function_exists( 'register_rest_route' ) ) {
+	function register_rest_route( string $namespace, string $route, array $args = [] ): bool {
+		return true;
+	}
+}
+
+if ( ! class_exists( 'WP_REST_Server' ) ) {
+	class WP_REST_Server {
+		public const READABLE  = 'GET';
+		public const CREATABLE = 'POST';
+	}
+}
+
+if ( ! class_exists( 'WP_REST_Request' ) ) {
+	class WP_REST_Request {
+		/**
+		 * @param array<string, mixed> $params
+		 */
+		public function __construct(
+			private string $method = 'GET',
+			private string $route = '',
+			private array $params = []
+		) {}
+
+		public function get_param( string $key ): mixed {
+			return $this->params[ $key ] ?? null;
+		}
+
+		public function set_param( string $key, mixed $value ): void {
+			$this->params[ $key ] = $value;
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_REST_Response' ) ) {
+	class WP_REST_Response {
+		public function __construct(
+			private mixed $data = null,
+			private int $status = 200
+		) {}
+
+		public function get_data(): mixed {
+			return $this->data;
+		}
+
+		public function get_status(): int {
+			return $this->status;
+		}
 	}
 }

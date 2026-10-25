@@ -1,0 +1,195 @@
+// Styles d'administration pour EG Mail (BEM, WordPress Admin Themes & Safari compatibility)
+
+.eg-mail-wrap {
+	max-width: 1200px;
+}
+
+// 1. Badges d'état et de priorité
+.eg-mail-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+
+	// Statuts
+	&--pending {
+		background-color: #f0f0f1;
+		color: #50575e;
+		border: 1px solid #c3c4c7;
+	}
+
+	&--processing {
+		background-color: #e7f3ff;
+		color: #135e96;
+		border: 1px solid #72aee6;
+	}
+
+	&--paused {
+		background-color: #fcf9e8;
+		color: #8c5e00;
+		border: 1px solid #e5a700;
+	}
+
+	&--sent {
+		background-color: #edfaef;
+		color: #007017;
+		border: 1px solid #68de7c;
+	}
+
+	&--failed {
+		background-color: #fcf0f1;
+		color: #b32d2e;
+		border: 1px solid #e65054;
+	}
+
+	&--cancelled {
+		background-color: #f0f0f1;
+		color: #646970;
+		border: 1px solid #dcdcde;
+		text-decoration: line-through;
+	}
+
+	&--finished {
+		background-color: #edfaef;
+		color: #007017;
+		border: 1px solid #68de7c;
+	}
+
+	// Priorités
+	&--priority-0 {
+		background-color: #fcf0f1;
+		color: #b32d2e;
+		border: 1px solid #e65054;
+	}
+
+	&--priority-1 {
+		background-color: #fff8e5;
+		color: #996800;
+		border: 1px solid #dba617;
+	}
+
+	&--priority-10 {
+		background-color: #f0f0f1;
+		color: #2c3338;
+		border: 1px solid #c3c4c7;
+	}
+
+	&--priority-20 {
+		background-color: #e7eef8;
+		color: #1d4f91;
+		border: 1px solid #8ab4f8;
+	}
+}
+
+// 2. Barres de progression d'envoi
+.eg-mail-progress-bar {
+	position: relative;
+	width: 100%;
+	height: 12px;
+	background-color: #f0f0f1;
+	border-radius: 6px;
+	overflow: hidden;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.eg-mail-progress-fill {
+	height: 100%;
+	background-color: var(--wp-admin-theme-color, #2271b1);
+	border-radius: 6px;
+	transition: width 0.3s ease-in-out;
+}
+
+// 3. Modale d'aperçu HTML (compatible Safari)
+.eg-mail-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	isolation: isolate;
+
+	&__backdrop {
+		position: absolute;
+		inset: 0;
+		background-color: rgba(0, 0, 0, 0.6);
+	}
+
+	&__dialog {
+		position: relative;
+		z-index: 1;
+		width: 90%;
+		max-width: 800px;
+		max-height: 90vh;
+		background: #fff;
+		border-radius: 6px;
+		box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
+		display: flex;
+		flex-direction: column;
+		overscroll-behavior: contain;
+	}
+
+	&__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 16px 20px;
+		border-bottom: 1px solid #dcdcde;
+
+		h2 {
+			margin: 0;
+			font-size: 18px;
+			font-weight: 600;
+		}
+	}
+
+	&__close {
+		background: transparent;
+		border: none;
+		font-size: 24px;
+		line-height: 1;
+		cursor: pointer;
+		color: #50575e;
+
+		&:hover {
+			color: #d63638;
+		}
+	}
+
+	&__body {
+		padding: 20px;
+		overflow-y: auto;
+		flex: 1;
+	}
+
+	&__field {
+		margin-bottom: 8px;
+		font-size: 13px;
+	}
+
+	&__content-wrapper {
+		border: 1px solid #c3c4c7;
+		border-radius: 4px;
+		height: 350px;
+	}
+
+	&__iframe {
+		width: 100%;
+		height: 100%;
+		border: none;
+		border-radius: 4px;
+	}
+
+	&__footer {
+		padding: 12px 20px;
+		border-top: 1px solid #dcdcde;
+		text-align: right;
+		background-color: #f6f7f7;
+		border-bottom-left-radius: 6px;
+		border-bottom-right-radius: 6px;
+	}
+}

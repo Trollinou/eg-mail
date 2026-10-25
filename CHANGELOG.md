@@ -7,6 +7,15 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Unreleased]
 
 ### Added
+- Menu et sous-menus d'administration WordPress sous **Outils** (`tools.php`) : Campagnes / Lots, File d'attente FIFO et Réglages avancés.
+- Contrôleur REST API `Admin_Rest_Controller` sécurisé (`/wp-json/eg-mail/v1/`) avec validation déclarative, permissions administrateur et nonce : mise en pause, reprise, annulation, forçage d'envoi immédiat diurne (`force-day`), prévisualisation d'e-mail avec assainissement HTML (`wp_kses_post`), purge de messages en attente et réconciliation de snapshot PRA.
+- Interface des Campagnes et Lots `Batch_List_Table` avec barres de progression dynamiques, statuts visuels et modale de prévisualisation accessible (fermeture touche Échap / clic backdrop).
+- Interface de navigation et recherche de la file FIFO `Queue_List_Table` dérivée de `WP_List_Table` avec filtres par statut et recherche plein texte.
+- Interface des réglages `Settings_Page` regroupant la configuration SMTP, les quotas de débit, la fenêtre nocturne, la politique de rétention et le bandeau d'alerte PRA en cas de divergence de snapshot.
+- Script TypeScript Vanilla atomique `src/ts/admin-batch.ts` compilé vers `assets/js/admin-batch.js` gérant les interactions REST asynchrones.
+- Feuilles de style SCSS modernes `src/scss/admin-queue.scss` compilées vers `assets/css/admin-queue.css` et `assets/css/admin-queue-rtl.css` avec support RTL automatique.
+- Utilitaire de requêtes typé `Request` (`includes/Utils/Request.php`) pour l'assainissement centralisé des superglobales.
+- Tests unitaires PHPUnit 11 complets pour le contrôleur REST d'administration (`tests/Unit/AdminRestControllerTest.php`).
 - Gestionnaire de réglages et options `Settings` avec quotas différenciés (minute jour/nuit, quota horaire glissant), fenêtre nocturne et calcul de backoff exponentiel.
 - Configurateur SMTP `Smtp_Configurator` hooké sur `phpmailer_init` avec persistance `SMTPKeepAlive` lors des cycles d'envoi par lots.
 - Worker WP-Cron d'arrière-plan `Worker` exécuté chaque minute avec Mutex anti-concurrence (`eg_mail_worker_lock`), calcul du quota effectif, coupe-circuit temps réel intra-boucle (`eg_mail_aborted_batches`), écoute fine de `wp_mail_failed` et backoff exponentiel (+5min, +20min, +60min).
