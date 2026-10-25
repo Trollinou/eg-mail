@@ -9,6 +9,7 @@ namespace EGMail\Admin;
 
 use EGMail\Core\Settings;
 use EGMail\Repositories\Queue_Repository;
+use EGMail\Utils\Request;
 
 class Admin_Menu {
 
@@ -224,8 +225,15 @@ class Admin_Menu {
 
 		$table = new Queue_List_Table( $this->repository );
 		$table->prepare_items();
+
+		$table->views();
+
 		echo '<form method="get">';
 		echo '<input type="hidden" name="page" value="' . esc_attr( self::PAGE_QUEUE ) . '" />';
+		$status = Request::get_key( 'status' );
+		if ( '' !== $status && 'all' !== $status ) {
+			echo '<input type="hidden" name="status" value="' . esc_attr( $status ) . '" />';
+		}
 		$table->search_box( __( 'Rechercher un destinataire', 'eg-mail' ), 'eg-mail-search' );
 		$table->display();
 		echo '</form>';

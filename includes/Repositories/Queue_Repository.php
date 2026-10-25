@@ -472,9 +472,13 @@ class Queue_Repository {
 		}
 		$total = (int) $this->db->get_var( $count_query );
 
-		// 2. Récupération des résultats paginés.
+		// 2. Récupération des résultats paginés avec tri sécurisé.
+		$allowed_orders = [ 'id', 'recipient', 'scheduled_at', 'status', 'priority', 'created_at' ];
+		$orderby        = isset( $filters['orderby'] ) && in_array( $filters['orderby'], $allowed_orders, true ) ? $filters['orderby'] : 'id';
+		$order          = isset( $filters['order'] ) && 'asc' === strtolower( $filters['order'] ) ? 'ASC' : 'DESC';
+
 		/** @var literal-string $select_sql */
-		$select_sql = "SELECT * FROM {$this->table_name} WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
+		$select_sql = "SELECT * FROM {$this->table_name} WHERE {$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d";
 		$all_params = array_merge( $params, [ $limit, $offset ] );
 		$query      = $this->db->prepare( $select_sql, ...$all_params );
 

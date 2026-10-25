@@ -188,3 +188,4 @@ add_filter( 'wp_mail_from_name', fn() => 'Mon Club Sportif' );
    Préférez transmettre la liste complète des adresses e-mails dans le paramètre `$to` de `wp_mail()`. EG Mail se charge d'éclater les destinataires de manière atomique en base de données, évitant la surcharge de mémoire PHP.
 3. **Gestion des Pièces Jointes** :
    Passez les chemins absolus locaux vers les fichiers (ex: `/var/www/html/wp-content/uploads/...`). EG Mail déduplique automatiquement les fichiers identiques via hash MD5 dans le spool sécurisé.
+
