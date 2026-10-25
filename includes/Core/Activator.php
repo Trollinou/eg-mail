@@ -147,6 +147,21 @@ final class Activator {
 	 * Planifie les tâches récurrentes WP-Cron du plugin.
 	 */
 	public static function schedule_crons(): void {
+		// Enregistrer l'intervalle personnalisé immédiatement pour la transaction d'activation.
+		add_filter(
+			'cron_schedules', // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- Intervalle 1 minute indispensable pour le worker.
+			static function ( array $schedules ): array {
+				if ( ! isset( $schedules['eg_mail_every_minute'] ) ) {
+					// phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- Intervalle 1 minute indispensable pour le worker.
+					$schedules['eg_mail_every_minute'] = [
+						'interval' => 60,
+						'display'  => __( 'Toutes les minutes (EG Mail Worker)', 'eg-mail' ),
+					];
+				}
+				return $schedules;
+			}
+		);
+
 		if ( ! wp_next_scheduled( 'eg_mail_cron_worker' ) ) {
 			wp_schedule_event( time(), 'eg_mail_every_minute', 'eg_mail_cron_worker' );
 		}
