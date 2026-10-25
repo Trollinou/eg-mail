@@ -53,3 +53,4 @@ $headers = [
 
 wp_mail( $recipients, $subject, $message, $headers, $attachments );
 ```
+

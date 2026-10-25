@@ -81,3 +81,4 @@ npm run package
 ## Licence
 
 Ce projet est distribué sous licence GNU General Public License v2 ou supérieure.
+

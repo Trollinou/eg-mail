@@ -13,3 +13,4 @@ if ( ! defined( 'EG_MAIL_PLUGIN_DIR' ) ) {
 if ( ! defined( 'EG_MAIL_PLUGIN_URL' ) ) {
 	define( 'EG_MAIL_PLUGIN_URL', 'https://example.com/wp-content/plugins/eg-mail/' );
 }
+

@@ -51,3 +51,4 @@ for ( const file of scssFiles ) {
 		process.exit( 1 );
 	}
 }
+

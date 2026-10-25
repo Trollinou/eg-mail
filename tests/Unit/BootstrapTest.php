@@ -18,3 +18,4 @@ final class BootstrapTest extends TestCase {
 		$this->assertSame( '1.0.0', EG_MAIL_VERSION );
 	}
 }
+

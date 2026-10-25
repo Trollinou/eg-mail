@@ -39,3 +39,4 @@ archive.glob( '**/*', {
 } );
 
 archive.finalize();
+
