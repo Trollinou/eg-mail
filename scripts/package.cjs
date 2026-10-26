@@ -37,7 +37,6 @@ const version = versionMatch[1].trim();
 console.log(`ℹ️  Version détectée : ${version}`);
 
 const zipName = `${pluginSlug}-v${version}.zip`;
-const genericZipName = `${pluginSlug}.zip`;
 const tempDestDir = path.join(buildDir, pluginSlug);
 
 // Fonction de résolution intelligente de PHP/Composer (notamment pour l'environnement LocalWP)
@@ -231,9 +230,6 @@ try {
 if (fs.existsSync(path.join(rootDir, zipName))) {
     fs.unlinkSync(path.join(rootDir, zipName));
 }
-if (fs.existsSync(path.join(rootDir, genericZipName))) {
-    fs.unlinkSync(path.join(rootDir, genericZipName));
-}
 if (fs.existsSync(buildDir)) {
     fs.rmSync(buildDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 }
@@ -385,7 +381,6 @@ try {
     const zip = new AdmZip();
     zip.addLocalFolder(tempDestDir, pluginSlug);
     zip.writeZip(path.join(rootDir, zipName));
-    fs.copyFileSync(path.join(rootDir, zipName), path.join(rootDir, genericZipName));
 } catch (error) {
     console.error('❌ Erreur lors de la création du ZIP :', error);
     fs.rmSync(buildDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
@@ -395,4 +390,4 @@ try {
 // Nettoyage final
 fs.rmSync(buildDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 
-console.log(`✅ Package créé avec succès : ${zipName} & ${genericZipName} (Environnement local préservé)`);
+console.log(`✅ Package créé avec succès : ${zipName} (Environnement local préservé)`);
