@@ -100,6 +100,14 @@ final class SettingsTest extends TestCase {
 		// 4. Seulement 20 envoyés sur l'heure -> il reste 80 slots (mais limité à 10 par minute le jour).
 		$effective_normal = $this->settings->calculate_effective_quota( 20, $day_time );
 		$this->assertSame( 10, $effective_normal );
+
+		// 5. Fenêtre glissante sur la dernière minute : déjà 6 envoyés sur la dernière minute (limite jour = 10) -> reliquat = 4.
+		$effective_partial_min = $this->settings->calculate_effective_quota( 20, $day_time, 6 );
+		$this->assertSame( 4, $effective_partial_min );
+
+		// 6. Fenêtre glissante sur la dernière minute saturée : déjà 10 envoyés il y a moins de 55s -> reliquat = 0.
+		$effective_saturated_min = $this->settings->calculate_effective_quota( 20, $day_time, 10 );
+		$this->assertSame( 0, $effective_saturated_min );
 	}
 
 	/**

@@ -95,7 +95,8 @@ final class Plugin {
 
 		// 8. Auto-planification de sécurité si les tâches récurrentes ne sont pas encore enregistrées.
 		if ( ! wp_next_scheduled( 'eg_mail_cron_worker' ) ) {
-			wp_schedule_event( time(), 'eg_mail_every_minute', 'eg_mail_cron_worker' );
+			$aligned_minute = (int) ( floor( time() / 60 ) * 60 );
+			wp_schedule_event( $aligned_minute, 'eg_mail_every_minute', 'eg_mail_cron_worker' );
 		}
 		if ( ! wp_next_scheduled( 'eg_mail_cron_cleaner' ) ) {
 			wp_schedule_event( time(), 'daily', 'eg_mail_cron_cleaner' );

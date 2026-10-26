@@ -26,6 +26,10 @@ if ( ! defined( 'EG_MAIL_PLUGIN_URL' ) ) {
 	define( 'EG_MAIL_PLUGIN_URL', 'https://example.com/wp-content/plugins/eg-mail/' );
 }
 
+if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+	define( 'MINUTE_IN_SECONDS', 60 );
+}
+
 if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
 	define( 'HOUR_IN_SECONDS', 3600 );
 }
@@ -268,6 +272,29 @@ if ( ! function_exists( 'delete_transient' ) ) {
 	function delete_transient( string $transient ): bool {
 		unset( $GLOBALS['eg_test_transients'][ $transient ] );
 		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_next_scheduled' ) ) {
+	function wp_next_scheduled( string $hook, array $args = [] ): int|false {
+		return $GLOBALS['eg_test_crons'][ $hook ] ?? false;
+	}
+}
+
+if ( ! function_exists( 'wp_schedule_event' ) ) {
+	function wp_schedule_event( int $timestamp, string $recurrence, string $hook, array $args = [], bool $wp_error = false ): bool {
+		$GLOBALS['eg_test_crons'][ $hook ] = $timestamp;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+	function wp_clear_scheduled_hook( string $hook, array $args = [], bool $wp_error = false ): int {
+		if ( isset( $GLOBALS['eg_test_crons'][ $hook ] ) ) {
+			unset( $GLOBALS['eg_test_crons'][ $hook ] );
+			return 1;
+		}
+		return 0;
 	}
 }
 

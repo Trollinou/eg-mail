@@ -163,7 +163,8 @@ final class Activator {
 		);
 
 		if ( ! wp_next_scheduled( 'eg_mail_cron_worker' ) ) {
-			wp_schedule_event( time(), 'eg_mail_every_minute', 'eg_mail_cron_worker' );
+			$aligned_minute = (int) ( floor( time() / 60 ) * 60 );
+			wp_schedule_event( $aligned_minute, 'eg_mail_every_minute', 'eg_mail_cron_worker' );
 		}
 
 		if ( ! wp_next_scheduled( 'eg_mail_cron_cleaner' ) ) {

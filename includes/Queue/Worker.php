@@ -20,6 +20,8 @@ class Worker {
 
 	public const ABORTED_BATCHES_TRANSIENT = 'eg_mail_aborted_batches';
 
+	public const COOLDOWN_SECONDS = 55;
+
 	/**
 	 * Constructeur avec injection des dépendances.
 	 *
@@ -61,9 +63,10 @@ class Worker {
 		$sent_count = 0;
 
 		try {
-			// 2. Calcul du quota effectif (croisement du quota minute et du reliquat horaire).
-			$sent_last_hour  = $this->repository->count_sent_in_last_hour();
-			$effective_limit = $this->settings->calculate_effective_quota( $sent_last_hour );
+			// 2. Calcul du quota effectif (croisement du reliquat minute glissant et du reliquat horaire).
+			$sent_last_minute = $this->repository->count_sent_in_last_minute( null, self::COOLDOWN_SECONDS );
+			$sent_last_hour   = $this->repository->count_sent_in_last_hour();
+			$effective_limit  = $this->settings->calculate_effective_quota( $sent_last_hour, null, $sent_last_minute );
 
 			if ( $effective_limit <= 0 ) {
 				return 0;
@@ -80,6 +83,10 @@ class Worker {
 
 			// 4. Boucle d'envoi des messages sélectionnés.
 			$sent_count = $this->dispatch_items( $items );
+
+			if ( $sent_count > 0 ) {
+				$this->ensure_minimum_cron_interval();
+			}
 
 			// 5. Nettoyage des pièces jointes orphelines du spool (Garbage Collector).
 			$active_paths = $this->repository->get_active_attachment_paths();
@@ -316,6 +323,28 @@ class Worker {
 			delete_transient( self::ABORTED_BATCHES_TRANSIENT );
 		} else {
 			set_transient( self::ABORTED_BATCHES_TRANSIENT, $aborted, 60 );
+		}
+	}
+
+	/**
+	 * Garantit qu'au moins 55 secondes séparent la fin réelle d'un lot et la prochaine échéance WP-Cron,
+	 * tout en alignant l'échéance sur la seconde :00 pour synchroniser avec une Crontab système à la minute.
+	 */
+	private function ensure_minimum_cron_interval(): void {
+		$now            = time();
+		$min_next_run   = $now + self::COOLDOWN_SECONDS;
+		$next_scheduled = wp_next_scheduled( 'eg_mail_cron_worker' );
+
+		if ( false !== $next_scheduled && ( $next_scheduled < $min_next_run || 0 !== ( $next_scheduled % 60 ) ) ) {
+			$aligned_next_run = (int) ( floor( $min_next_run / 60 ) * 60 );
+			if ( $aligned_next_run <= $now ) {
+				$aligned_next_run += 60;
+			}
+
+			if ( $next_scheduled !== $aligned_next_run ) {
+				wp_clear_scheduled_hook( 'eg_mail_cron_worker' );
+				wp_schedule_event( $aligned_next_run, 'eg_mail_every_minute', 'eg_mail_cron_worker' );
+			}
 		}
 	}
 

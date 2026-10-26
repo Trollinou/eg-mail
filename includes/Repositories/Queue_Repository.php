@@ -176,6 +176,22 @@ class Queue_Repository {
 	}
 
 	/**
+	 * Compte le nombre d'e-mails envoyés lors de la dernière minute glissante (55s par défaut pour absorber la durée d'envoi du lot sous Crontab 1 min).
+	 *
+	 * @param ?int $now_timestamp  Timestamp Unix de référence (null pour maintenant).
+	 * @param int  $window_seconds Fenêtre glissante en secondes (défaut : 55).
+	 */
+	public function count_sent_in_last_minute( ?int $now_timestamp = null, int $window_seconds = 55 ): int {
+		$ref_time   = null !== $now_timestamp ? $now_timestamp : time();
+		$cutoff_str = wp_date( 'Y-m-d H:i:s', $ref_time - max( 1, $window_seconds ) );
+		/** @var literal-string $sql */
+		$sql   = "SELECT COUNT(*) FROM {$this->table_name} WHERE status = 'sent' AND sent_at >= %s";
+		$query = $this->db->prepare( $sql, $cutoff_str );
+
+		return (int) $this->db->get_var( $query );
+	}
+
+	/**
 	 * Compte le nombre d'e-mails envoyés lors des 60 dernières minutes glissantes.
 	 */
 	public function count_sent_in_last_hour(): int {

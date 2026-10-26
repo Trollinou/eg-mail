@@ -27,6 +27,7 @@ final class WorkerTest extends TestCase {
 		parent::setUp();
 		$GLOBALS['eg_test_transients'] = [];
 		$GLOBALS['eg_test_options']    = [];
+		$GLOBALS['eg_test_crons']      = [];
 
 		$this->repository = $this->createMock( Queue_Repository::class );
 		$this->spooler    = $this->createMock( Attachment_Spooler::class );
@@ -158,5 +159,91 @@ final class WorkerTest extends TestCase {
 
 		$sent = $this->worker->run();
 		$this->assertSame( 1, $sent );
+	}
+
+	/**
+	 * Vérifie que la fenêtre glissante sur la dernière minute bloque tout nouvel envoi rapproché (< 55s)
+	 * et que le recalage anti-rattrapage aligne l'échéance WP-Cron sur la minute pleine suivante (:00).
+	 */
+	public function test_process_queue_stops_when_minute_sliding_quota_is_saturated_and_reschedules_cron(): void {
+		$this->settings->update(
+			[
+				'quota_minute_day'   => 20,
+				'quota_minute_night' => 20,
+				'quota_hour'         => 0,
+			]
+		);
+
+		// Déjà 20 messages envoyés dans les 55 dernières secondes.
+		$this->repository->expects( $this->once() )
+			->method( 'count_sent_in_last_minute' )
+			->with( null, Worker::COOLDOWN_SECONDS )
+			->willReturn( 20 );
+
+		$this->repository->expects( $this->once() )
+			->method( 'count_sent_in_last_hour' )
+			->willReturn( 20 );
+
+		$this->repository->expects( $this->never() )
+			->method( 'fetch_eligible_batch' );
+
+		$sent = $this->worker->run();
+		$this->assertSame( 0, $sent );
+	}
+
+	/**
+	 * Vérifie que lorsqu'un lot est envoyé et que WP-Cron avait programmé l'échéance suivante trop tôt (ex: à :55 dans 20s),
+	 * le Worker la recale à au moins +55s et l'aligne sur la seconde :00.
+	 */
+	public function test_worker_reschedules_drifted_cron_to_aligned_minute_after_sending(): void {
+		$now = time();
+		// Simule une échéance WP-Cron trop proche (+15s) et non alignée sur :00.
+		$GLOBALS['eg_test_crons']['eg_mail_cron_worker'] = $now + 15;
+
+		$item = new Queue_Item(
+			id: 42,
+			batch_id: 'batch_cron_align',
+			dedup_hash: 'hash_align',
+			status: Queue_Status::PENDING,
+			priority: Queue_Priority::NORMAL,
+			recipient: 'cron@example.com',
+			subject: 'Test alignement cron',
+			message: 'Corps',
+			headers: [],
+			attachments: [],
+			context_meta: new Context_Meta(),
+			created_at: '2026-10-25 10:00:00',
+			scheduled_at: '2026-10-25 10:00:00',
+		);
+
+		$this->repository->expects( $this->once() )
+			->method( 'count_sent_in_last_minute' )
+			->willReturn( 0 );
+
+		$this->repository->expects( $this->once() )
+			->method( 'count_sent_in_last_hour' )
+			->willReturn( 0 );
+
+		$this->repository->expects( $this->exactly( 2 ) )
+			->method( 'fetch_eligible_batch' )
+			->willReturn( [ $item ] );
+
+		$this->repository->expects( $this->once() )
+			->method( 'get_by_id' )
+			->with( 42 )
+			->willReturn( $item );
+
+		$this->repository->expects( $this->exactly( 2 ) )
+			->method( 'update_status' )
+			->willReturn( true );
+
+		$sent = $this->worker->run();
+		$this->assertSame( 1, $sent );
+
+		$new_scheduled = wp_next_scheduled( 'eg_mail_cron_worker' );
+		$this->assertIsInt( $new_scheduled );
+		// Doit être aligné sur la seconde :00 (multiple de 60) et strictement supérieur à $now + 15.
+		$this->assertSame( 0, $new_scheduled % 60 );
+		$this->assertGreaterThan( $now + 15, $new_scheduled );
 	}
 }

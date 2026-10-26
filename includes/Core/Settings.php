@@ -98,25 +98,28 @@ final class Settings {
 	/**
 	 * Calcule le quota effectif d'envoi pour le cycle courant du Worker.
 	 *
-	 * Croise le quota par minute (jour ou nuit) et le reliquat horaire glissant.
+	 * Croise le reliquat sur la minute glissante (jour ou nuit) et le reliquat horaire glissant.
 	 *
-	 * @param int  $sent_last_hour Nombre d'e-mails envoyés sur les 60 dernières minutes.
-	 * @param ?int $timestamp      Timestamp pour évaluer le mode nuit.
+	 * @param int  $sent_last_hour   Nombre d'e-mails envoyés sur les 60 dernières minutes.
+	 * @param ?int $timestamp        Timestamp pour évaluer le mode nuit.
+	 * @param int  $sent_last_minute Nombre d'e-mails envoyés sur la dernière minute glissante.
 	 * @return int Nombre d'e-mails autorisés sur ce cycle de 1 minute.
 	 */
-	public function calculate_effective_quota( int $sent_last_hour, ?int $timestamp = null ): int {
+	public function calculate_effective_quota( int $sent_last_hour, ?int $timestamp = null, int $sent_last_minute = 0 ): int {
 		$is_night     = $this->is_night_time( $timestamp );
 		$minute_limit = $is_night ? (int) $this->get( 'quota_minute_night', 25 ) : (int) $this->get( 'quota_minute_day', 10 );
 		$minute_limit = max( 1, $minute_limit );
 
+		$remaining_minute = max( 0, $minute_limit - max( 0, $sent_last_minute ) );
+
 		$hour_limit = (int) $this->get( 'quota_hour', 0 );
 		if ( $hour_limit <= 0 ) {
-			return $minute_limit;
+			return $remaining_minute;
 		}
 
 		$remaining_hour = max( 0, $hour_limit - $sent_last_hour );
 
-		return min( $minute_limit, $remaining_hour );
+		return min( $remaining_minute, $remaining_hour );
 	}
 
 	/**
