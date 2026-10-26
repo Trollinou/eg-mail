@@ -6,6 +6,8 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-10-26
+
 ### Fixed
 - Régulation stricte du quota par minute glissante (`Queue_Repository::count_sent_in_last_minute`, `Settings::calculate_effective_quota`, `Worker::run`) : déduction des e-mails expédiés au cours des 55 dernières secondes pour empêcher tout envoi de lots rapprochés à moins d'une minute d'intervalle.
 - Neutralisation de l'effet de rattrapage en rafale de `WP-Cron` et synchronisation sur la seconde `:00` (`Worker::ensure_minimum_cron_interval`, `Plugin::init`, `Activator::schedule_crons`) pour garantir un alignement exact avec une Crontab système exécutée toutes les minutes (`*/1 * * * *`).

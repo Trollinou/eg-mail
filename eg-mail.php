@@ -3,7 +3,7 @@
  * Plugin Name:       EG Mail
  * Plugin URI:        https://example.com/eg-mail
  * Description:       Middleware d'interception transparente de wp_mail(), régulation SMTP multi-niveaux et gestion de lots d'e-mails.
- * Version:           1.0.2
+ * Version:           1.0.3
  * Requires at least: 7.1
  * Requires PHP:      8.4
  * Author:            Etienne Gagnon
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes globales du plugin.
-define( 'EG_MAIL_VERSION', '1.0.2' );
+define( 'EG_MAIL_VERSION', '1.0.3' );
 define( 'EG_MAIL_PLUGIN_FILE', __FILE__ );
 define( 'EG_MAIL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EG_MAIL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
