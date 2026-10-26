@@ -323,6 +323,31 @@ class Queue_Repository {
 	}
 
 	/**
+	 * Reprogramme un lot d'e-mails (priorité et date/heure prévue) et réactive son statut en attente.
+	 *
+	 * @param string         $batch_id     Identifiant de lot.
+	 * @param Queue_Priority $priority     Nouvelle priorité à appliquer.
+	 * @param string         $scheduled_at Nouvelle date d'éligibilité (format MySQL Y-m-d H:i:s).
+	 * @return int Nombre de messages mis à jour.
+	 */
+	public function reschedule_batch( string $batch_id, Queue_Priority $priority, string $scheduled_at ): int {
+		/** @var literal-string $sql */
+		$sql   = "UPDATE {$this->table_name}
+			SET priority = %d, scheduled_at = %s, status = 'pending'
+			WHERE batch_id = %s AND status IN ('pending', 'paused')";
+		$query = $this->db->prepare( $sql, $priority->value, $scheduled_at, $batch_id );
+
+		if ( ! is_string( $query ) ) {
+			return 0;
+		}
+
+		$result = $this->db->query( $query );
+		wp_cache_delete( 'batch_summaries', self::CACHE_GROUP );
+
+		return is_int( $result ) ? $result : 0;
+	}
+
+	/**
 	 * Purge l'intégralité des messages en attente ou en pause de toute la file d'attente.
 	 *
 	 * @return int Nombre de messages purgés.

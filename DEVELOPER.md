@@ -37,17 +37,38 @@ Ce document est destiné aux développeurs de thèmes, d'extensions WordPress et
 
 ## 2. En-têtes Personnalisés (`X-Queue-*`)
 
-Pour contrôler la priorité, le regroupement ou forcer un envoi immédiat, ajoutez simplement ces en-têtes au paramètre `$headers` de `wp_mail()`.
+Pour contrôler la priorité, le regroupement, l'envoi différé ou forcer un envoi immédiat, ajoutez simplement ces en-têtes au paramètre `$headers` de `wp_mail()`.
 
 | En-tête | Valeurs Acceptées | Valeur par Défaut | Description & Cas d'Usage |
 | :--- | :--- | :--- | :--- |
 | **`X-Queue-Priority`** | `0`, `1`, `10`, `20` | `10` (Normale) | Définit le niveau d'urgence et la planification de l'e-mail. |
-| **`X-Queue-Batch`** | Chaîne alphanumérique (slug) | Hash auto `md5(subject + minute)` | Identifiant de campagne/lot affiché dans l'administration pour le suivi, la mise en pause ou l'annulation groupée. |
+| **`X-Queue-Batch`** | Chaîne alphanumérique (slug) | Hash auto `md5(subject + minute)` | Identifiant de campagne/lot affiché dans l'administration pour le suivi, la mise en pause, la reprogrammation ou l'annulation groupée. |
+| **`X-Queue-Scheduled-At`** | Date `Y-m-d H:i[:s]`, ISO 8601, expression relative (`+2 hours`, `tomorrow 09:00`) ou Timestamp Unix | Calculé selon la priorité (`NOW()` ou `22:00:00`) | Diffère l'éligibilité d'envoi de l'e-mail à une date et heure précises dans le futur (fuseau horaire WordPress `wp_timezone()`). |
 | **`X-Queue-Bypass`** | `true`, `1` | `false` | Court-circuite la file d'attente : envoi synchrone immédiat via PHPMailer sans passer par la base de données. Équivalent à `X-Queue-Priority: 0`. |
 
 ---
 
-## 3. Détail des Niveaux de Priorité (`X-Queue-Priority`)
+## 3. Programmation Différée (`X-Queue-Scheduled-At`)
+
+L'en-tête **`X-Queue-Scheduled-At`** vous permet de planifier l'expédition d'un e-mail ou d'une campagne entière à une échéance future précise dès l'appel à `wp_mail()`.
+
+### Formats de Date et Heure Supportés
+Toutes les dates et expressions relatives sont interprétées selon le fuseau horaire configuré dans WordPress (`wp_timezone()`) :
+1. **Date et heure explicites (recommandé)** : `2026-11-15 14:30:00` ou `2026-11-15 14:30` (ou format ISO `2026-11-15T14:30:00`).
+2. **Délai relatif** : `+2 hours`, `+30 minutes`, `tomorrow 09:00`, `next monday 08:30`.
+3. **Timestamp Unix** : `1794753000` (entier représentant le nombre de secondes depuis l'époque Unix).
+
+### Interaction avec les Niveaux de Priorité
+- **Avec la priorité par défaut (`10` - Normale) ou Haute (`1` - Critique)** : L'e-mail reste en attente (`pending`) jusqu'à l'heure exacte indiquée dans `X-Queue-Scheduled-At`, puis est dépilé par le Worker dès que cette échéance est atteinte (y compris en pleine journée).
+- **Avec la priorité Basse (`20` - Envoi Nocturne)** : L'e-mail devient éligible à partir de la date indiquée dans `X-Queue-Scheduled-At`, **mais reste strictement soumis à la fenêtre nocturne** (ex: 22h00 – 06h00). C'est idéal pour préparer plusieurs jours à l'avance une campagne massive qui ne devra partir que de nuit à partir d'une date donnée.
+  > **Astuce** : Si vous souhaitez programmer un envoi à une heure précise de la journée (ex: demain à 10h00), conservez la priorité `10` (par défaut) ou `1`.
+
+### Sécurité & Repli Automatique (Fallback)
+Si la valeur transmise dans `X-Queue-Scheduled-At` est mal formée ou correspond à une date déjà passée, **EG Mail ne bloque jamais votre e-mail** : l'en-tête est ignoré et le calcul de planification se replie automatiquement sur le comportement standard lié à la priorité du message (envoi immédiat en file pour les priorités `1` et `10`, ou prochaine fenêtre nocturne pour la priorité `20`).
+
+---
+
+## 4. Détail des Niveaux de Priorité (`X-Queue-Priority`)
 
 Les priorités sont indexées sur l'énumération PHP `EGMail\Enums\Queue_Priority` :
 
@@ -82,7 +103,7 @@ Les priorités sont indexées sur l'énumération PHP `EGMail\Enums\Queue_Priori
 
 ---
 
-## 4. Exemples Pratiques de Code
+## 5. Exemples Pratiques de Code
 
 ### Exemple 1 : Envoi Critique Immédiat (Bypass 2FA)
 
@@ -151,7 +172,33 @@ wp_mail( 'tresorier@example.com', 'Nouvelle adhésion validée', $body, $headers
 
 ---
 
-### Exemple 4 : Formatage sous Forme de Chaîne de Caractères
+### Exemple 4 : Envoi Différé à une Date ou un Délai Précis (`X-Queue-Scheduled-At`)
+
+Pour programmer un rappel de tournoi demain matin à 09h00 précises ou décaler un e-mail de 2 heures :
+
+```php
+// Option A : Date et heure explicites (dans le fuseau horaire de WordPress)
+$headers = [
+    'Content-Type: text/html; charset=UTF-8',
+    'X-Queue-Priority: 10', // Priorité 10 (par défaut) pour autoriser le départ à 09h00 en journée
+    'X-Queue-Batch: rappel-tournoi-j1',
+    'X-Queue-Scheduled-At: 2026-11-15 09:00:00',
+];
+
+wp_mail( $participants, 'Rappel : Votre tournoi commence demain', $html_body, $headers );
+
+// Option B : Expression relative (+2 hours, tomorrow 09:00...)
+$headers_rel = [
+    'Content-Type: text/html; charset=UTF-8',
+    'X-Queue-Scheduled-At: +2 hours',
+];
+
+wp_mail( 'joueur@example.com', 'Confirmation de votre inscription', $html_body, $headers_rel );
+```
+
+---
+
+### Exemple 5 : Formatage sous Forme de Chaîne de Caractères
 
 EG Mail supporte indifféremment les en-têtes fournis sous forme de tableau PHP ou de chaîne de caractères multiligne :
 
@@ -160,13 +207,14 @@ $headers  = "Content-Type: text/html; charset=UTF-8\r\n";
 $headers .= "From: Club d'Échecs <contact@example.com>\r\n";
 $headers .= "X-Queue-Priority: 10\r\n";
 $headers .= "X-Queue-Batch: relances-avril-2026\r\n";
+$headers .= "X-Queue-Scheduled-At: tomorrow 08:30\r\n";
 
 wp_mail( $to, $subject, $message, $headers );
 ```
 
 ---
 
-## 5. Capture de Contexte & Filtres WordPress Supportés
+## 6. Capture de Contexte & Filtres WordPress Supportés
 
 EG Mail écoute fidèlement les filtres natifs WordPress au moment précis où `wp_mail()` est appelé, et restaure ce contexte lors de l'expédition finale par le Worker :
 
@@ -180,7 +228,7 @@ add_filter( 'wp_mail_from_name', fn() => 'Mon Club Sportif' );
 
 ---
 
-## 6. Surveillance & Bonnes Pratiques
+## 7. Surveillance & Bonnes Pratiques
 
 1. **Nommez vos lots (`X-Queue-Batch`)** :
    Donnez des noms explicites (ex: `cotisations-2026`, `tournoi-ronde-3`). Cela permet aux administrateurs de retrouver la campagne en un coup d'œil dans **EG Mail > Campagnes & Lots**, d'observer la barre de progression en temps réel, ou de mettre en pause / annuler le lot en cas d'erreur de contenu.

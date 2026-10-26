@@ -8,20 +8,26 @@ document.addEventListener( 'DOMContentLoaded', () => {
 		return;
 	}
 
-	const { api_url, nonce, i18n } = config;
+	const { api_url, nonce, night_start, now_local, i18n } = config;
 
 	/**
 	 * Envoie une requête POST vers l'API REST du plugin.
 	 */
-	const postAction = async ( endpoint: string ): Promise<void> => {
+	const postAction = async ( endpoint: string, body?: Record<string, unknown> ): Promise<void> => {
 		try {
-			const response = await fetch( `${ api_url }${ endpoint }`, {
+			const init: RequestInit = {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					'X-WP-Nonce': nonce,
 				},
-			} );
+			};
+
+			if ( body ) {
+				init.body = JSON.stringify( body );
+			}
+
+			const response = await fetch( `${ api_url }${ endpoint }`, init );
 
 			const data = ( await response.json() ) as { success?: boolean; message?: string };
 			if ( data.success ) {
@@ -141,14 +147,150 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	const attachContainer = document.getElementById( 'eg-mail-preview-attachments-container' );
 	const attachList = document.getElementById( 'eg-mail-preview-attachments' );
 
-	const closeModal = (): void => {
+	// 8. Modale de reprogrammation de campagne.
+	const rescheduleModal = document.getElementById( 'eg-mail-reschedule-modal' );
+	const rescheduleBatchIdInput = document.getElementById( 'eg-mail-reschedule-batch-id' ) as HTMLInputElement | null;
+	const rescheduleSubjectSpan = document.getElementById( 'eg-mail-reschedule-subject' );
+	const reschedulePrioritySelect = document.getElementById( 'eg-mail-reschedule-priority' ) as HTMLSelectElement | null;
+	const rescheduleDatetimeInput = document.getElementById( 'eg-mail-reschedule-datetime' ) as HTMLInputElement | null;
+	const rescheduleNightHint = document.getElementById( 'eg-mail-reschedule-night-hint' );
+	const rescheduleSubmitBtn = document.getElementById( 'eg-mail-reschedule-submit' ) as HTMLButtonElement | null;
+
+	const closeModals = (): void => {
 		if ( modal ) {
 			modal.style.display = 'none';
 		}
 		if ( iframe ) {
 			iframe.srcdoc = '';
 		}
+		if ( rescheduleModal ) {
+			rescheduleModal.style.display = 'none';
+		}
 	};
+
+	const formatLocalDatetime = ( d: Date ): string => {
+		const pad = ( n: number ): string => String( n ).padStart( 2, '0' );
+		return `${ d.getFullYear() }-${ pad( d.getMonth() + 1 ) }-${ pad( d.getDate() ) }T${ pad( d.getHours() ) }:${ pad( d.getMinutes() ) }`;
+	};
+
+	const getNextNightLocal = ( baseDate?: Date ): string => {
+		const ref = baseDate ? new Date( baseDate.getTime() ) : new Date();
+		const [ nhStr = '22', nmStr = '00' ] = ( night_start || '22:00' ).split( ':' );
+		const nh = parseInt( nhStr, 10 );
+		const nm = parseInt( nmStr, 10 );
+
+		const target = new Date( ref.getTime() );
+		target.setHours( nh, nm, 0, 0 );
+
+		const now = new Date();
+		if ( target.getTime() < now.getTime() ) {
+			target.setDate( target.getDate() + 1 );
+		}
+
+		return formatLocalDatetime( target );
+	};
+
+	const updateNightHint = ( priorityVal: string ): void => {
+		if ( rescheduleNightHint ) {
+			rescheduleNightHint.style.display = '20' === priorityVal ? 'block' : 'none';
+		}
+	};
+
+	document.addEventListener( 'click', ( evt ) => {
+		const target = ( evt.target as HTMLElement ).closest( '.eg-mail-btn-reschedule' );
+		if ( ! target || ! rescheduleModal ) {
+			return;
+		}
+
+		const batchId = target.getAttribute( 'data-batch-id' ) ?? '';
+		const subject = target.getAttribute( 'data-subject' ) ?? '';
+		const priority = target.getAttribute( 'data-priority' ) ?? '10';
+		const scheduledAt = target.getAttribute( 'data-scheduled-at' ) ?? '';
+
+		if ( rescheduleBatchIdInput ) {
+			rescheduleBatchIdInput.value = batchId;
+		}
+		if ( rescheduleSubjectSpan ) {
+			rescheduleSubjectSpan.textContent = subject;
+		}
+		if ( reschedulePrioritySelect ) {
+			reschedulePrioritySelect.value = priority;
+		}
+		if ( rescheduleDatetimeInput ) {
+			const normalized = scheduledAt.replace( ' ', 'T' ).slice( 0, 16 );
+			rescheduleDatetimeInput.value = normalized || now_local || formatLocalDatetime( new Date() );
+		}
+
+		updateNightHint( priority );
+		rescheduleModal.style.display = 'flex';
+	} );
+
+	if ( reschedulePrioritySelect && rescheduleDatetimeInput ) {
+		reschedulePrioritySelect.addEventListener( 'change', () => {
+			const newPriority = reschedulePrioritySelect.value;
+			updateNightHint( newPriority );
+
+			const currentVal = rescheduleDatetimeInput.value;
+			const parsedCurrent = currentVal ? new Date( currentVal ) : new Date();
+			const baseDate = isNaN( parsedCurrent.getTime() ) ? new Date() : parsedCurrent;
+
+			if ( '20' === newPriority ) {
+				rescheduleDatetimeInput.value = getNextNightLocal( baseDate );
+			} else {
+				const now = new Date();
+				// Si la date sélectionnée est aujourd'hui ou passée, on propose "Maintenant", sinon on garde le jour futur choisi avec l'heure courante.
+				if ( baseDate.toDateString() === now.toDateString() || baseDate.getTime() < now.getTime() ) {
+					rescheduleDatetimeInput.value = formatLocalDatetime( now );
+				}
+			}
+		} );
+	}
+
+	// Boutons de raccourcis rapides dans la modale de reprogrammation.
+	document.addEventListener( 'click', ( evt ) => {
+		const target = ( evt.target as HTMLElement ).closest( '.eg-mail-shortcut-btn' );
+		if ( ! target || ! rescheduleDatetimeInput ) {
+			return;
+		}
+
+		const shortcut = target.getAttribute( 'data-shortcut' );
+		if ( 'now' === shortcut ) {
+			rescheduleDatetimeInput.value = formatLocalDatetime( new Date() );
+			if ( reschedulePrioritySelect && '20' === reschedulePrioritySelect.value ) {
+				reschedulePrioritySelect.value = '10';
+				updateNightHint( '10' );
+			}
+		} else if ( 'tonight' === shortcut ) {
+			rescheduleDatetimeInput.value = getNextNightLocal();
+		} else if ( 'plus24h' === shortcut ) {
+			const currentVal = rescheduleDatetimeInput.value;
+			const base = currentVal ? new Date( currentVal ) : new Date();
+			const validBase = isNaN( base.getTime() ) ? new Date() : base;
+			validBase.setDate( validBase.getDate() + 1 );
+			rescheduleDatetimeInput.value = formatLocalDatetime( validBase );
+		}
+	} );
+
+	// Validation de la reprogrammation.
+	if ( rescheduleSubmitBtn ) {
+		rescheduleSubmitBtn.addEventListener( 'click', () => {
+			const batchId = rescheduleBatchIdInput?.value ?? '';
+			const priority = parseInt( reschedulePrioritySelect?.value ?? '10', 10 );
+			const scheduledAt = rescheduleDatetimeInput?.value ?? '';
+
+			if ( ! batchId || ! scheduledAt ) {
+				return;
+			}
+
+			rescheduleSubmitBtn.setAttribute( 'disabled', 'disabled' );
+			rescheduleSubmitBtn.textContent = i18n.loading;
+
+			void postAction( `/batches/${ batchId }/reschedule`, {
+				priority,
+				scheduled_at: scheduledAt,
+			} );
+		} );
+	}
 
 	document.addEventListener( 'click', ( evt ) => {
 		const target = ( evt.target as HTMLElement ).closest( '.eg-mail-btn-preview' );
@@ -204,7 +346,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 		} )();
 	} );
 
-	// Fermeture de la modale.
+	// Fermeture des modales.
 	document.addEventListener( 'click', ( evt ) => {
 		const target = evt.target as HTMLElement;
 		if (
@@ -212,13 +354,13 @@ document.addEventListener( 'DOMContentLoaded', () => {
 			target.classList.contains( 'eg-mail-modal__close-btn' ) ||
 			target.classList.contains( 'eg-mail-modal__backdrop' )
 		) {
-			closeModal();
+			closeModals();
 		}
 	} );
 
 	document.addEventListener( 'keydown', ( evt ) => {
-		if ( 'Escape' === evt.key && modal && 'none' !== modal.style.display ) {
-			closeModal();
+		if ( 'Escape' === evt.key ) {
+			closeModals();
 		}
 	} );
 } );

@@ -53,8 +53,9 @@ class Batch_List_Table {
 		echo '</table>';
 		echo '</div>';
 
-		// Modale HTML de prévisualisation (cachée par défaut).
+		// Modales HTML (cachées par défaut).
 		$this->render_preview_modal();
+		$this->render_reschedule_modal();
 	}
 
 	/**
@@ -84,7 +85,7 @@ class Batch_List_Table {
 		echo esc_html( $batch->priority->label() );
 		echo '</span>';
 		echo '<div style="font-size: 11px; color: #646970; margin-top: 4px;">';
-		if ( $batch->priority->is_nocturnal() && ! $batch->is_finished() ) {
+		if ( ! $batch->is_finished() ) {
 			echo esc_html__( 'Départ prévu : ', 'eg-mail' ) . esc_html( $batch->scheduled_at );
 		} else {
 			echo esc_html__( 'Créé le : ', 'eg-mail' ) . esc_html( $batch->created_at );
@@ -123,11 +124,9 @@ class Batch_List_Table {
 					. '</button>';
 			}
 
-			if ( $batch->priority->is_nocturnal() ) {
-				echo '<button type="button" class="button button-small eg-mail-btn-force-day" data-batch-id="' . esc_attr( $batch->batch_id ) . '" style="margin-right: 4px;" title="' . esc_attr__( 'Forcer l\'envoi diurne sans attendre 22h', 'eg-mail' ) . '">'
-					. esc_html__( 'Forcer le départ', 'eg-mail' )
-					. '</button>';
-			}
+			echo '<button type="button" class="button button-small eg-mail-btn-reschedule" data-batch-id="' . esc_attr( $batch->batch_id ) . '" data-subject="' . esc_attr( $batch->subject ?: __( '(Sans sujet)', 'eg-mail' ) ) . '" data-priority="' . esc_attr( (string) $batch->priority->value ) . '" data-scheduled-at="' . esc_attr( $batch->scheduled_at ) . '" style="margin-right: 4px;">'
+				. esc_html__( 'Reprogrammer', 'eg-mail' )
+				. '</button>';
 
 			echo '<button type="button" class="button button-small button-link-delete eg-mail-btn-cancel" data-batch-id="' . esc_attr( $batch->batch_id ) . '">'
 				. esc_html__( 'Annuler & Purger', 'eg-mail' )
@@ -162,6 +161,56 @@ class Batch_List_Table {
 		echo '</div>';
 		echo '<div class="eg-mail-modal__footer">';
 		echo '<button type="button" class="button button-secondary eg-mail-modal__close-btn">' . esc_html__( 'Fermer', 'eg-mail' ) . '</button>';
+		echo '</div>';
+		echo '</div>';
+		echo '</div>';
+	}
+
+	/**
+	 * Structure HTML de la modale de reprogrammation d'une campagne.
+	 */
+	private function render_reschedule_modal(): void {
+		echo '<div id="eg-mail-reschedule-modal" class="eg-mail-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="eg-mail-reschedule-title">';
+		echo '<div class="eg-mail-modal__backdrop"></div>';
+		echo '<div class="eg-mail-modal__dialog eg-mail-modal__dialog--small">';
+		echo '<div class="eg-mail-modal__header">';
+		echo '<h2 id="eg-mail-reschedule-title" class="eg-mail-modal__title">' . esc_html__( 'Reprogrammer la Campagne', 'eg-mail' ) . '</h2>';
+		echo '<button type="button" class="eg-mail-modal__close" aria-label="' . esc_attr__( 'Fermer', 'eg-mail' ) . '">&times;</button>';
+		echo '</div>';
+		echo '<div class="eg-mail-modal__body">';
+		echo '<input type="hidden" id="eg-mail-reschedule-batch-id" value="">';
+
+		echo '<div class="eg-mail-modal__field">';
+		echo '<strong>' . esc_html__( 'Campagne : ', 'eg-mail' ) . '</strong><span id="eg-mail-reschedule-subject"></span>';
+		echo '</div>';
+
+		echo '<div class="eg-mail-modal__form-group">';
+		echo '<label for="eg-mail-reschedule-priority"><strong>' . esc_html__( 'Priorité d\'envoi', 'eg-mail' ) . '</strong></label>';
+		echo '<select id="eg-mail-reschedule-priority" class="regular-text">';
+		echo '<option value="' . esc_attr( (string) Queue_Priority::CRITICAL->value ) . '">' . esc_html( Queue_Priority::CRITICAL->label() ) . '</option>';
+		echo '<option value="' . esc_attr( (string) Queue_Priority::NORMAL->value ) . '">' . esc_html( Queue_Priority::NORMAL->label() ) . '</option>';
+		echo '<option value="' . esc_attr( (string) Queue_Priority::LOW->value ) . '">' . esc_html( Queue_Priority::LOW->label() ) . '</option>';
+		echo '</select>';
+		echo '<p id="eg-mail-reschedule-night-hint" class="description eg-mail-modal__hint" style="display: none;">';
+		echo esc_html__( 'Info : La priorité "Basse / Nuit" restreint l\'expédition aux seules fenêtres nocturnes à partir de la date choisie. Pour un envoi en journée à une heure précise, sélectionnez la priorité "Normale".', 'eg-mail' );
+		echo '</p>';
+		echo '</div>';
+
+		echo '<div class="eg-mail-modal__form-group">';
+		echo '<label for="eg-mail-reschedule-datetime"><strong>' . esc_html__( 'Date et heure de départ prévues', 'eg-mail' ) . '</strong></label>';
+		echo '<input type="datetime-local" id="eg-mail-reschedule-datetime" class="regular-text" required>';
+		echo '<div class="eg-mail-modal__shortcuts">';
+		echo '<button type="button" class="button button-small eg-mail-shortcut-btn" data-shortcut="now">' . esc_html__( 'Maintenant', 'eg-mail' ) . '</button>';
+		echo '<button type="button" class="button button-small eg-mail-shortcut-btn" data-shortcut="tonight">' . esc_html__( 'Ce soir (Plage nuit)', 'eg-mail' ) . '</button>';
+		echo '<button type="button" class="button button-small eg-mail-shortcut-btn" data-shortcut="plus24h">' . esc_html__( '+24h (Décaler d\'un jour)', 'eg-mail' ) . '</button>';
+		echo '</div>';
+		echo '<p class="description">' . esc_html__( 'Si la campagne était en pause, elle repassera automatiquement au statut "En attente" pour partir à l\'échéance choisie.', 'eg-mail' ) . '</p>';
+		echo '</div>';
+
+		echo '</div>';
+		echo '<div class="eg-mail-modal__footer">';
+		echo '<button type="button" class="button button-secondary eg-mail-modal__close-btn" style="margin-right: 8px;">' . esc_html__( 'Annuler', 'eg-mail' ) . '</button>';
+		echo '<button type="button" id="eg-mail-reschedule-submit" class="button button-primary">' . esc_html__( 'Enregistrer la programmation', 'eg-mail' ) . '</button>';
 		echo '</div>';
 		echo '</div>';
 		echo '</div>';

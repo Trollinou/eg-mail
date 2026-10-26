@@ -131,6 +131,10 @@
 		display: flex;
 		flex-direction: column;
 		overscroll-behavior: contain;
+
+		&--small {
+			max-width: 520px;
+		}
 	}
 
 	&__header {
@@ -167,8 +171,40 @@
 	}
 
 	&__field {
-		margin-bottom: 8px;
+		margin-bottom: 12px;
 		font-size: 13px;
+	}
+
+	&__form-group {
+		margin-top: 16px;
+		margin-bottom: 16px;
+
+		label {
+			display: block;
+			margin-bottom: 6px;
+		}
+
+		select,
+		input[type="datetime-local"] {
+			width: 100%;
+			max-width: 100%;
+		}
+	}
+
+	&__shortcuts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-top: 8px;
+		margin-bottom: 8px;
+	}
+
+	&__hint {
+		margin-top: 8px !important;
+		padding: 8px 10px;
+		background-color: #f0f6fc;
+		border-left: 3px solid #2271b1;
+		color: #1d2327;
 	}
 
 	&__content-wrapper {

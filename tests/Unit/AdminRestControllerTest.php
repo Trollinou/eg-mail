@@ -160,5 +160,65 @@ final class AdminRestControllerTest extends TestCase {
 		$this->assertTrue( $data['success'] );
 		$this->assertSame( 12, $data['sent_count'] );
 	}
+
+	/**
+	 * Vérifie la reprogrammation d'un lot via REST (priorité + date/heure).
+	 */
+	public function test_handle_reschedule_batch(): void {
+		$this->repository->expects( $this->once() )
+			->method( 'reschedule_batch' )
+			->with( 'batch_resched_1', Queue_Priority::LOW, '2026-10-30 22:00:00' )
+			->willReturn( 42 );
+
+		$request = new WP_REST_Request(
+			'POST',
+			'/eg-mail/v1/batches/batch_resched_1/reschedule',
+			[
+				'batch_id'     => 'batch_resched_1',
+				'priority'     => 20,
+				'scheduled_at' => '2026-10-30T22:00',
+			]
+		);
+
+		$response = $this->controller->handle_reschedule_batch( $request );
+		$data     = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertTrue( $data['success'] );
+		$this->assertSame( 42, $data['updated'] );
+		$this->assertSame( 20, $data['priority'] );
+		$this->assertSame( '2026-10-30 22:00:00', $data['scheduled_at'] );
+	}
+
+	/**
+	 * Vérifie le rejet d'une reprogrammation avec des paramètres invalides.
+	 */
+	public function test_handle_reschedule_batch_invalid_input(): void {
+		$request_bad_date = new WP_REST_Request(
+			'POST',
+			'/eg-mail/v1/batches/batch_resched_1/reschedule',
+			[
+				'batch_id'     => 'batch_resched_1',
+				'priority'     => 10,
+				'scheduled_at' => 'invalid-date',
+			]
+		);
+
+		$response = $this->controller->handle_reschedule_batch( $request_bad_date );
+		$this->assertSame( 400, $response->get_status() );
+
+		$request_bypass = new WP_REST_Request(
+			'POST',
+			'/eg-mail/v1/batches/batch_resched_1/reschedule',
+			[
+				'batch_id'     => 'batch_resched_1',
+				'priority'     => 0,
+				'scheduled_at' => '2026-10-30T14:00',
+			]
+		);
+
+		$response_bypass = $this->controller->handle_reschedule_batch( $request_bypass );
+		$this->assertSame( 400, $response_bypass->get_status() );
+	}
 }
 
