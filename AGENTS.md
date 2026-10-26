@@ -5,14 +5,14 @@
 
 | Placeholder | Variable | **VALEUR POUR CE PROJET (À remplir)** | Exemple (`DAME` / `ROI` / `DAME-PWA`) |
 | :--- | :--- | :--- | :--- |
-| `[NOM_PLUGIN]` | Nom du Projet | `EG Mail` | `DAME`, `ROI`, `DAME-PWA`, `EG Media Manager`, `EG Backup` |
-| `[TYPE_PROJET]`| Typologie | `WP_PLUGIN` | `WP_PLUGIN` \| `WP_HYBRID_PWA` \| `STANDALONE_LIB` |
-| `[SLUG]` | Slug / Textdomain | `eg-mail` | `dame`, `roi`, `dame-pwa`, `eg-media`, `eg-backup` |
-| `[SLUG_MAJ]` | Préfixe Constantes | `EG_MAIL` | `DAME`, `ROI`, `DAME_PWA`, `EG_MEDIA`, `EG_BACKUP` |
-| `[PREFIX]` | Préfixe PHP & JS | `eg_mail_` | `dame_`, `roi_`, `dame_pwa_`, `eg_media_`, `eg_backup_` |
-| `[NAMESPACE]` | Namespace PSR-4 | `EGMail\` | `DAME\`, `ROI\`, `DAME_PWA\`, `EG_MEDIA\` |
-| `[DB_SLUG]` | Suffixe Table SQL | `eg_mail_` | `{$wpdb->prefix}dame_`, `{$wpdb->prefix}roi_` |
-| `[VENDOR_PROD]`| Composer en Prod | `NON` | `OUI` (embarqué dans le ZIP via `--no-dev -o`) \| `NON` |
+| `[NOM_PLUGIN]` | Nom du Projet | `EG Mail` | 
+| `[TYPE_PROJET]`| Typologie | `WP_PLUGIN` | 
+| `[SLUG]` | Slug / Textdomain | `eg-mail` | 
+| `[SLUG_MAJ]` | Préfixe Constantes | `EG_MAIL` | 
+| `[PREFIX]` | Préfixe PHP & JS | `eg_mail_` | 
+| `[NAMESPACE]` | Namespace PSR-4 | `EGMail\` | 
+| `[DB_SLUG]` | Suffixe Table SQL | `eg_mail_` | 
+| `[VENDOR_PROD]`| Composer en Prod | `NON` | 
 
 ### Versions Cibles & Stack Technique
 | Outil | Version Requise | Impact strict sur le code |
