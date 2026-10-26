@@ -6,6 +6,8 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-26
+
 ### Added
 - Support de l'envoi d'e-mail différé dès l'appel à `wp_mail()` via le nouvel en-tête personnalisé `X-Queue-Scheduled-At` (`Interceptor::parse_custom_headers`, `Interceptor::parse_scheduled_at_header`), acceptant les dates explicites (`Y-m-d H:i:s` / ISO 8601), les expressions relatives (`+2 hours`, `tomorrow 09:00`) et les timestamps Unix dans le fuseau horaire WordPress (`wp_timezone()`).
 - Documentation complète de l'en-tête `X-Queue-Scheduled-At`, des formats supportés, de l'interaction avec la priorité nocturne et des exemples d'intégration dans `DEVELOPER.md` et `USING.md`.
