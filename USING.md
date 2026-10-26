@@ -35,8 +35,8 @@ Les interfaces d'EG Mail sont accessibles dans l'administration WordPress via le
 Dans l'onglet **Campagnes & Lots** :
 1. **Mettre en Pause (`Pause`)** : Les messages en attente passent au statut `paused`. Le Worker les ignore temporairement.
 2. **Reprendre (`Reprendre`)** : Les messages reviennent au statut `pending` et rejoignent la file active.
-3. **Annuler et Purger (`Annuler le lot`)** : Les messages en attente sont supprimés immédiatement. Si le Worker était en train d'expédier ce lot, son coupe-circuit intra-boucle stoppe immédiatement l'envoi à la seconde près.
-4. **Forcer l'envoi diurne** : Passe la priorité du lot de 20 (Nuit) à 10 (Normale) et déclenche l'envoi dès le prochain cycle du Worker en journée.
+3. **Annuler et Purger (`Annuler & Purger`)** : Les messages en attente sont supprimés immédiatement. Si le Worker était en train d'expédier ce lot, son coupe-circuit intra-boucle stoppe immédiatement l'envoi à la seconde près.
+4. **Reprogrammer (`Reprogrammer`)** : Ouvre une fenêtre modale permettant de modifier la **priorité** (`Critique`, `Normale`, `Basse / Nuit`) et la **date/heure prévue de départ** (avec raccourcis rapides *« Maintenant »*, *« Ce soir (Plage nuit) »* et *« +24h »* pour décaler de plusieurs jours). Si le lot était en pause, la validation le réactive automatiquement en statut `pending` pour un départ à la nouvelle échéance.
 
 ---
 
@@ -49,6 +49,7 @@ $headers = [
     'Content-Type: text/html; charset=UTF-8',
     'X-Queue-Priority: 1',                     // 1 = Critique (coupe-file), 10 = Normale, 20 = Nuit, 0 = Bypass synchrone
     'X-Queue-Batch: convocation-ag-2026',      // Identifiant explicite de lot pour l'administration
+    'X-Queue-Scheduled-At: 2026-11-15 09:00',  // Optionnel : Envoi différé à une date/heure précise ou délai relatif (+2 hours)
 ];
 
 wp_mail( $recipients, $subject, $message, $headers, $attachments );

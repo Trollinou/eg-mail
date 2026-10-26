@@ -27,7 +27,7 @@
 
 4. **Gestion de Campagnes & Annulation en Direct (`batch_id`)** :
    - Regroupement automatique des envois massifs par campagne.
-   - Boutons d'action immédiate : Pause, Reprise, Forcer l'envoi diurne, Annuler et purger.
+   - Boutons d'action immédiate : Pause, Reprise, Reprogrammation (date/heure et priorité), Annuler et purger.
    - Coupe-circuit intra-boucle dans le Worker pour stopper net un lot à la seconde près.
 
 5. **Déduplication des Pièces Jointes & Résilience (PRA)** :

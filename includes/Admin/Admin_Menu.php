@@ -153,9 +153,11 @@ class Admin_Menu {
 			'eg-mail-admin-batch',
 			'eg_mail_admin_data',
 			[
-				'api_url' => rest_url( 'eg-mail/v1' ),
-				'nonce'   => wp_create_nonce( 'wp_rest' ),
-				'i18n'    => [
+				'api_url'     => rest_url( 'eg-mail/v1' ),
+				'nonce'       => wp_create_nonce( 'wp_rest' ),
+				'night_start' => (string) $this->settings->get( 'night_start', '22:00' ),
+				'now_local'   => wp_date( 'Y-m-d\TH:i' ),
+				'i18n'        => [
 					'confirm_cancel' => __( 'Confirmez-vous l\'annulation et la purge de ce lot ? Les e-mails restants ne seront pas envoyés.', 'eg-mail' ),
 					'confirm_purge'  => __( 'Êtes-vous sûr de vouloir vider TOUTE la file d\'attente ? Cette action est irréversible.', 'eg-mail' ),
 					'loading'        => __( 'Traitement en cours...', 'eg-mail' ),

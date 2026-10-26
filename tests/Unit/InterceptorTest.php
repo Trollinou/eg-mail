@@ -134,5 +134,53 @@ final class InterceptorTest extends TestCase {
 		$expected = md5( $subject . '|' . floor( time() / 60 ) );
 		$this->assertSame( $expected, $batch_id );
 	}
+
+	/**
+	 * Vérifie l'analyse de l'en-tête d'envoi différé X-Queue-Scheduled-At (formats explicites, relatifs et Unix).
+	 */
+	public function test_parse_scheduled_at_header(): void {
+		$future_ts    = time() + 7200;
+		$expected_str = wp_date( 'Y-m-d H:i:s', $future_ts );
+
+		// 1. Format explicite MySQL Y-m-d H:i:s dans le futur.
+		$headers_mysql = [
+			'Content-Type: text/html; charset=UTF-8',
+			'X-Queue-Scheduled-At: ' . $expected_str,
+		];
+		$parsed_mysql  = $this->interceptor->parse_custom_headers( $headers_mysql );
+		$this->assertSame( $expected_str, $parsed_mysql['scheduled_at'] );
+		$this->assertCount( 1, $parsed_mysql['clean_headers'] );
+
+		// 2. Format Timestamp Unix dans le futur.
+		$headers_ts = [ 'X-Queue-Scheduled-At: ' . $future_ts ];
+		$parsed_ts  = $this->interceptor->parse_custom_headers( $headers_ts );
+		$this->assertSame( $expected_str, $parsed_ts['scheduled_at'] );
+
+		// 3. Expression relative (+3 hours).
+		$parsed_rel = $this->interceptor->parse_scheduled_at_header( '+3 hours' );
+		$this->assertNotNull( $parsed_rel );
+		$this->assertGreaterThan( time() + 10000, strtotime( $parsed_rel ) );
+
+		// 4. Date dans le passé ou invalide -> repli sécurisé (null).
+		$past_str = wp_date( 'Y-m-d H:i:s', time() - 3600 );
+		$this->assertNull( $this->interceptor->parse_scheduled_at_header( $past_str ) );
+		$this->assertNull( $this->interceptor->parse_scheduled_at_header( 'not-a-valid-date-string' ) );
+		$this->assertNull( $this->interceptor->parse_scheduled_at_header( '' ) );
+	}
+
+	/**
+	 * Vérifie que calculate_scheduled_at respecte la date différée explicite lorsqu'elle est fournie.
+	 */
+	public function test_calculate_scheduled_at_with_custom_header(): void {
+		$custom_future = wp_date( 'Y-m-d H:i:s', time() + 86400 );
+
+		// Même en priorité normale (10), la date différée est appliquée.
+		$result_normal = $this->interceptor->calculate_scheduled_at( Queue_Priority::NORMAL, $custom_future );
+		$this->assertSame( $custom_future, $result_normal );
+
+		// En priorité basse (20), la date différée d'éligibilité initiale est également conservée.
+		$result_low = $this->interceptor->calculate_scheduled_at( Queue_Priority::LOW, $custom_future );
+		$this->assertSame( $custom_future, $result_low );
+	}
 }
 

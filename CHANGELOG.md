@@ -6,6 +6,18 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- Support de l'envoi d'e-mail différé dès l'appel à `wp_mail()` via le nouvel en-tête personnalisé `X-Queue-Scheduled-At` (`Interceptor::parse_custom_headers`, `Interceptor::parse_scheduled_at_header`), acceptant les dates explicites (`Y-m-d H:i:s` / ISO 8601), les expressions relatives (`+2 hours`, `tomorrow 09:00`) et les timestamps Unix dans le fuseau horaire WordPress (`wp_timezone()`).
+- Documentation complète de l'en-tête `X-Queue-Scheduled-At`, des formats supportés, de l'interaction avec la priorité nocturne et des exemples d'intégration dans `DEVELOPER.md` et `USING.md`.
+- Reprogrammation complète des campagnes en attente ou en pause (`Batch_List_Table`, `Admin_Rest_Controller`, `Queue_Repository`) : modale dédiée permettant de modifier la priorité (`Critique`, `Normale`, `Basse / Nuit`) et la date/heure d'envoi (`scheduled_at`) avec raccourcis rapides (*Maintenant*, *Ce soir*, *+24h*).
+- Route REST API `POST /eg-mail/v1/batches/{batch_id}/reschedule` avec validation déclarative et réactivation automatique des lots en pause vers le statut `pending`.
+
+### Changed
+- Remplacement du bouton d'action unitaire « Forcer le départ » par le bouton universel « Reprogrammer » sur toutes les campagnes non terminées dans la vue **Campagnes & Lots**.
+- Affichage systématique de la date de départ prévue (`scheduled_at`) pour toutes les campagnes non terminées dans la colonne « Priorité & Programmation ».
+
+## [1.0.1] - 2026-10-26
+
 ### Changed
 - Déplacement des interfaces d'administration vers un menu de premier niveau dédié **EG Mail** avec icône Dashicons `dashicons-email-alt2` (remplace l'emplacement sous le menu Outils).
 - Harmonisation des scripts de synchronisation de version SemVer (`scripts/version-sync.cjs`) et de packaging autonome (`scripts/package.cjs`).

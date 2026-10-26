@@ -53,7 +53,15 @@ if ( ! function_exists( '_n' ) ) {
 if ( ! function_exists( 'wp_date' ) ) {
 	function wp_date( string $format, ?int $timestamp = null, ?DateTimeZone $timezone = null ): string {
 		$time = null !== $timestamp ? $timestamp : time();
-		return date( $format, $time );
+		$tz   = null !== $timezone ? $timezone : wp_timezone();
+		$dt   = new DateTimeImmutable( '@' . $time )->setTimezone( $tz );
+		return $dt->format( $format );
+	}
+}
+
+if ( ! function_exists( 'wp_timezone' ) ) {
+	function wp_timezone(): DateTimeZone {
+		return new DateTimeZone( date_default_timezone_get() );
 	}
 }
 

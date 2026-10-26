@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace EGMail\API;
 
 use EGMail\Core\Backup_Integration;
+use EGMail\Enums\Queue_Priority;
 use EGMail\Queue\Attachment_Spooler;
 use EGMail\Queue\Worker;
 use EGMail\Repositories\Queue_Repository;
@@ -73,6 +74,30 @@ final class Admin_Rest_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'handle_force_day' ],
 				'permission_callback' => [ $this, 'check_permission' ],
+			]
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/batches/(?P<batch_id>[a-zA-Z0-9_-]+)/reschedule',
+			[
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'handle_reschedule_batch' ],
+				'permission_callback' => [ $this, 'check_permission' ],
+				'args'                => [
+					'priority'     => [
+						'type'              => 'integer',
+						'required'          => true,
+						'validate_callback' => static fn( mixed $param ): bool => is_numeric( $param ) && in_array( (int) $param, [ 1, 10, 20 ], true ),
+						'sanitize_callback' => static fn( mixed $param ): int => is_numeric( $param ) ? (int) $param : 10,
+					],
+					'scheduled_at' => [
+						'type'              => 'string',
+						'required'          => true,
+						'validate_callback' => [ self::class, 'validate_scheduled_at' ],
+						'sanitize_callback' => [ self::class, 'sanitize_scheduled_at' ],
+					],
+				],
 			]
 		);
 
@@ -219,6 +244,88 @@ final class Admin_Rest_Controller {
 				),
 			]
 		);
+	}
+
+	/**
+	 * Reprogramme un lot d'e-mails (priorité et date/heure prévue) et le réactive en statut "En attente".
+	 *
+	 * @param WP_REST_Request<array<string, mixed>> $request Requête REST.
+	 */
+	public function handle_reschedule_batch( WP_REST_Request $request ): WP_REST_Response {
+		$batch_id         = sanitize_key( (string) $request->get_param( 'batch_id' ) );
+		$priority_raw     = $request->get_param( 'priority' );
+		$scheduled_at_raw = $request->get_param( 'scheduled_at' );
+
+		$priority_int = is_numeric( $priority_raw ) ? (int) $priority_raw : Queue_Priority::NORMAL->value;
+		$priority     = Queue_Priority::tryFrom( $priority_int );
+
+		if ( null === $priority || $priority->is_bypass() ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'message' => __( 'Priorité invalide.', 'eg-mail' ),
+				],
+				400
+			);
+		}
+
+		if ( ! self::validate_scheduled_at( $scheduled_at_raw ) ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'message' => __( 'Date ou heure de programmation invalide.', 'eg-mail' ),
+				],
+				400
+			);
+		}
+
+		$scheduled_at = self::sanitize_scheduled_at( $scheduled_at_raw );
+		$updated      = $this->repository->reschedule_batch( $batch_id, $priority, $scheduled_at );
+
+		return new WP_REST_Response(
+			[
+				'success'      => true,
+				'updated'      => $updated,
+				'priority'     => $priority->value,
+				'scheduled_at' => $scheduled_at,
+				'message'      => sprintf(
+					/* translators: %d: nombre de messages reprogrammés */
+					__( '%d message(s) reprogrammés avec succès.', 'eg-mail' ),
+					$updated
+				),
+			]
+		);
+	}
+
+	/**
+	 * Valide le format d'une date de programmation (ISO datetime-local ou MySQL DATETIME).
+	 *
+	 * @param mixed $param Valeur reçue.
+	 */
+	public static function validate_scheduled_at( mixed $param ): bool {
+		if ( ! is_string( $param ) || '' === trim( $param ) ) {
+			return false;
+		}
+
+		return 1 === preg_match( '/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$/', trim( $param ) );
+	}
+
+	/**
+	 * Normalise une date de programmation au format MySQL Y-m-d H:i:s.
+	 *
+	 * @param mixed $param Valeur reçue.
+	 */
+	public static function sanitize_scheduled_at( mixed $param ): string {
+		if ( ! is_string( $param ) ) {
+			return current_time( 'mysql' );
+		}
+
+		$normalized = str_replace( 'T', ' ', trim( $param ) );
+		if ( 16 === strlen( $normalized ) ) {
+			$normalized .= ':00';
+		}
+
+		return $normalized;
 	}
 
 	/**

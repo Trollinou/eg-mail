@@ -1,6 +1,6 @@
 {
   "name": "eg-mail",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Régulation SMTP, ordonnancement nocturne et annulation de lots d'e-mails pour WordPress",
   "main": "assets/js/admin-batch.js",
   "scripts": {

@@ -82,8 +82,8 @@ final class Interceptor {
 		// 4. Capture du contexte dynamique de WordPress (filtres dynamiques au moment de l'appel).
 		$context_meta = $this->capture_context_meta();
 
-		// 5. Calcul de la date d'éligibilité (scheduled_at) selon la priorité et la fenêtre nocturne.
-		$scheduled_at = $this->calculate_scheduled_at( $priority );
+		// 5. Calcul de la date d'éligibilité (scheduled_at) selon l'en-tête personnalisé, la priorité et la fenêtre nocturne.
+		$scheduled_at = $this->calculate_scheduled_at( $priority, $parsed_meta['scheduled_at'] );
 		$now          = current_time( 'mysql' );
 
 		// 6. Éclatement des destinataires : insertion d'un enregistrement par destinataire.
@@ -164,7 +164,7 @@ final class Interceptor {
 	 * Analyse les en-têtes personnalisés X-Queue-* et retourne les en-têtes nettoyés.
 	 *
 	 * @param mixed $headers_raw En-têtes bruts (chaîne ou tableau).
-	 * @return array{priority: Queue_Priority, batch_id: ?string, is_bypass: bool, clean_headers: array<int, string>}
+	 * @return array{priority: Queue_Priority, batch_id: ?string, is_bypass: bool, scheduled_at: ?string, clean_headers: array<int, string>}
 	 */
 	public function parse_custom_headers( mixed $headers_raw ): array {
 		$headers = [];
@@ -187,6 +187,7 @@ final class Interceptor {
 		$priority      = Queue_Priority::NORMAL;
 		$batch_id      = null;
 		$is_bypass     = false;
+		$scheduled_at  = null;
 		$clean_headers = [];
 
 		foreach ( $headers as $header ) {
@@ -206,6 +207,11 @@ final class Interceptor {
 				continue;
 			}
 
+			if ( preg_match( '/^X-Queue-Scheduled-At\s*:\s*(.+)$/i', $header, $matches ) ) {
+				$scheduled_at = $this->parse_scheduled_at_header( trim( $matches[1] ) );
+				continue;
+			}
+
 			$clean_headers[] = $header;
 		}
 
@@ -213,8 +219,48 @@ final class Interceptor {
 			'priority'      => $priority,
 			'batch_id'      => $batch_id,
 			'is_bypass'     => $is_bypass,
+			'scheduled_at'  => $scheduled_at,
 			'clean_headers' => $clean_headers,
 		];
+	}
+
+	/**
+	 * Analyse et valide une valeur d'en-tête X-Queue-Scheduled-At (date explicite, délai relatif ou timestamp Unix).
+	 *
+	 * @param string $raw_value Valeur brute extraite de l'en-tête.
+	 * @return ?string Date au format MySQL Y-m-d H:i:s dans le fuseau WordPress si valide et dans le futur, ou null.
+	 */
+	public function parse_scheduled_at_header( string $raw_value ): ?string {
+		$value = trim( $raw_value );
+		if ( '' === $value ) {
+			return null;
+		}
+
+		$tz            = wp_timezone();
+		$now_timestamp = time();
+		$target_ts     = null;
+
+		if ( ctype_digit( $value ) ) {
+			$target_ts = (int) $value;
+		} else {
+			try {
+				$now_dt    = new \DateTimeImmutable( '@' . $now_timestamp )->setTimezone( $tz );
+				$parsed_dt = $now_dt->modify( $value );
+				if ( false !== $parsed_dt ) {
+					$target_ts = $parsed_dt->getTimestamp();
+				}
+			} catch ( \Exception ) {
+				return null;
+			}
+		}
+
+		if ( null === $target_ts || $target_ts <= $now_timestamp ) {
+			return null;
+		}
+
+		$formatted = wp_date( 'Y-m-d H:i:s', $target_ts, $tz );
+
+		return is_string( $formatted ) ? $formatted : null;
 	}
 
 	/**
@@ -244,12 +290,17 @@ final class Interceptor {
 	}
 
 	/**
-	 * Calcule la date d'éligibilité d'expédition (scheduled_at) selon la priorité et la fenêtre nocturne.
+	 * Calcule la date d'éligibilité d'expédition (scheduled_at) selon la priorité, la fenêtre nocturne et l'en-tête différé éventuel.
 	 *
-	 * @param Queue_Priority $priority Niveau de priorité.
+	 * @param Queue_Priority $priority            Niveau de priorité.
+	 * @param ?string        $custom_scheduled_at Date/heure d'envoi différé explicite (format Y-m-d H:i:s).
 	 * @return string Date au format MySQL Y-m-d H:i:s.
 	 */
-	public function calculate_scheduled_at( Queue_Priority $priority ): string {
+	public function calculate_scheduled_at( Queue_Priority $priority, ?string $custom_scheduled_at = null ): string {
+		if ( null !== $custom_scheduled_at && '' !== $custom_scheduled_at ) {
+			return $custom_scheduled_at;
+		}
+
 		$now_timestamp = time();
 		$now_mysql     = current_time( 'mysql' );
 
