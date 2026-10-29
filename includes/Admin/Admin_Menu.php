@@ -170,27 +170,6 @@ class Admin_Menu {
 	}
 
 	/**
-	 * Rendu de la barre d'onglets de navigation.
-	 *
-	 * @param string $active_page Page actuellement affichée.
-	 */
-	public function render_nav_tabs( string $active_page ): void {
-		$tabs = [
-			self::PAGE_BATCHES  => __( 'Campagnes & Lots', 'eg-mail' ),
-			self::PAGE_QUEUE    => __( 'File d\'attente détaillée', 'eg-mail' ),
-			self::PAGE_SETTINGS => __( 'Réglages SMTP & Quotas', 'eg-mail' ),
-		];
-
-		echo '<nav class="nav-tab-wrapper wp-clearfix" style="margin-bottom: 20px;">';
-		foreach ( $tabs as $page => $label ) {
-			$active_class = ( $page === $active_page ) ? ' nav-tab-active' : '';
-			$url          = admin_url( 'admin.php?page=' . $page );
-			echo '<a href="' . esc_url( $url ) . '" class="nav-tab' . esc_attr( $active_class ) . '">' . esc_html( $label ) . '</a>';
-		}
-		echo '</nav>';
-	}
-
-	/**
 	 * Rendu de la page Campagnes & Lots.
 	 */
 	public function render_batches_page(): void {
@@ -202,8 +181,6 @@ class Admin_Menu {
 		echo '<h1 class="wp-heading-inline">' . esc_html__( 'EG Mail — Suivi des Campagnes & Lots', 'eg-mail' ) . '</h1>';
 		echo '<button type="button" class="button button-primary eg-mail-btn-process" style="margin-left: 10px;">' . esc_html__( 'Dépiler la file maintenant', 'eg-mail' ) . '</button>';
 		echo '<hr class="wp-header-end">';
-
-		$this->render_nav_tabs( self::PAGE_BATCHES );
 
 		$table = new Batch_List_Table( $this->repository );
 		$table->render();
@@ -224,8 +201,6 @@ class Admin_Menu {
 		echo '<button type="button" class="button button-primary eg-mail-btn-process" style="margin-left: 10px;">' . esc_html__( 'Dépiler la file maintenant', 'eg-mail' ) . '</button>';
 		echo '<button type="button" class="button button-secondary eg-mail-btn-purge" style="margin-left: 10px;">' . esc_html__( 'Vider toute la file', 'eg-mail' ) . '</button>';
 		echo '<hr class="wp-header-end">';
-
-		$this->render_nav_tabs( self::PAGE_QUEUE );
 
 		$table = new Queue_List_Table( $this->repository );
 		$table->prepare_items();
@@ -256,8 +231,6 @@ class Admin_Menu {
 		echo '<div class="wrap eg-mail-wrap">';
 		echo '<h1 class="wp-heading-inline">' . esc_html__( 'EG Mail — Réglages & Régulation', 'eg-mail' ) . '</h1>';
 		echo '<hr class="wp-header-end">';
-
-		$this->render_nav_tabs( self::PAGE_SETTINGS );
 
 		$page = new Settings_Page( $this->settings, $this->repository );
 		$page->render();
