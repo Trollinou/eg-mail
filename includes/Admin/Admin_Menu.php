@@ -58,7 +58,7 @@ class Admin_Menu {
 			self::PAGE_BATCHES,
 			[ $this, 'render_batches_page' ],
 			'dashicons-email-alt2',
-			26
+			30.5
 		);
 
 		if ( is_string( $main_hook ) ) {
