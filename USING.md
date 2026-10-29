@@ -32,7 +32,7 @@ Les interfaces d'EG Mail sont accessibles dans l'administration WordPress via le
 
 ## 3. Gestion et Annulation d'un Lot en Direct
 
-Dans l'onglet **Campagnes & Lots** :
+Sur la page **Campagnes & Lots** :
 1. **Mettre en Pause (`Pause`)** : Les messages en attente passent au statut `paused`. Le Worker les ignore temporairement.
 2. **Reprendre (`Reprendre`)** : Les messages reviennent au statut `pending` et rejoignent la file active.
 3. **Annuler et Purger (`Annuler & Purger`)** : Les messages en attente sont supprimés immédiatement. Si le Worker était en train d'expédier ce lot, son coupe-circuit intra-boucle stoppe immédiatement l'envoi à la seconde près.

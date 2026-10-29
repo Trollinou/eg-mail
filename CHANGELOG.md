@@ -6,6 +6,12 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-10-29
+
+### Changed
+- Suppression de la barre d'onglets de navigation horizontale (`.nav-tab-wrapper`) sur les écrans d'administration au profit d'une navigation directe par les 3 sous-pages du menu WordPress dédié **EG Mail** (`Admin_Menu::render_batches_page`, `Admin_Menu::render_queue_page`, `Admin_Menu::render_settings_page`).
+- Mise à jour de la documentation d'utilisation (`USING.md`).
+
 ## [1.0.3] - 2026-10-26
 
 ### Fixed
