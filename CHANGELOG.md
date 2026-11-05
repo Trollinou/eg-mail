@@ -6,6 +6,9 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- Intégration du workflow d'intégration continue GitHub Actions QA (`.github/workflows/qa.yml`) validant PHP 8.4 (PHPStan Level 8, PHPCS, PHPUnit 11) et le Front-End sous Node 24 (ESLint, TypeScript strict `tsc`, build de production).
+
 ## [1.0.4] - 2026-10-29
 
 ### Changed
