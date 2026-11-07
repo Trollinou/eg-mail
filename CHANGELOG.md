@@ -6,6 +6,9 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+- Intégration du workflow d'intégration continue GitHub Actions QA (`.github/workflows/qa.yml`) validant PHP 8.4 (PHPStan Level 8, PHPCS, PHPUnit 11) et le Front-End sous Node 24 (ESLint, TypeScript strict `tsc`, build de production).
+
 ### Security
 - Correction d'une faille XSS stockée / DOM-based (`src/ts/admin-batch.ts`, `includes/API/Admin_Rest_Controller.php`) lors de l'affichage des noms de pièces jointes dans la modale de prévisualisation : remplacement de `innerHTML` par la création programmatique DOM (`document.createElement`, `textContent`) et assainissement serveur via `sanitize_file_name()`.
 - Suppression de l'exposition du mot de passe SMTP en clair dans le DOM (`includes/Admin/Settings_Page.php`) : masquage de la valeur de l'attribut `value`, affichage d'un placeholder masqué `••••••••` et préservation du mot de passe existant en cas de soumission à vide.
