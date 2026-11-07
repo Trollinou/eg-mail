@@ -6,6 +6,18 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Security
+- Correction d'une faille XSS stockée / DOM-based (`src/ts/admin-batch.ts`, `includes/API/Admin_Rest_Controller.php`) lors de l'affichage des noms de pièces jointes dans la modale de prévisualisation : remplacement de `innerHTML` par la création programmatique DOM (`document.createElement`, `textContent`) et assainissement serveur via `sanitize_file_name()`.
+- Suppression de l'exposition du mot de passe SMTP en clair dans le DOM (`includes/Admin/Settings_Page.php`) : masquage de la valeur de l'attribut `value`, affichage d'un placeholder masqué `••••••••` et préservation du mot de passe existant en cas de soumission à vide.
+- Renforcement du cloisonnement de la sandbox de l'iframe de prévisualisation des e-mails (`includes/Admin/Batch_List_Table.php`) : suppression de `allow-same-origin` pour maintenir le rendu d'e-mails non fiables dans une origine opaque `null`.
+- Déclaration formelle et validation typée des paramètres d'URL REST (`batch_id`) sur l'ensemble des routes d'administration (`includes/API/Admin_Rest_Controller.php`) avec `validate_callback` et `sanitize_callback` (`sanitize_key`), et validation de priorité via l'énumération typée `Queue_Priority`.
+- Contrôle dynamique et recréation automatique des fichiers de protection du spool (`.htaccess` et `index.php`) lors de l'accès au répertoire (`includes/Queue/Attachment_Spooler.php`).
+- Durcissement contre l'exécution de code arbitraire (RCE) dans le dossier de spool (`includes/Queue/Attachment_Spooler.php`, `includes/Core/Activator.php`) : neutralisation des extensions de scripts exécutables (`.bin`) et injection de directives Apache de désactivation de l'interpréteur PHP (`php_flag engine off`).
+- Support complet du nettoyage Multisite lors de la désinstallation du plugin (`uninstall.php`) avec itération sur l'ensemble des blogs du réseau (`get_sites()`).
+
+### Fixed
+- Correction de l'arrondi supérieur (`ceil`) dans le calcul de réalignement de l'intervalle minimal de WP-Cron (`Worker::ensure_minimum_cron_interval`) garantissant le respect strict des 55 secondes de refroidissement minimales sur la seconde `:00`.
+
 ## [1.0.4] - 2026-10-29
 
 ### Changed

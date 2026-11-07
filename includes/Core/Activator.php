@@ -127,12 +127,22 @@ final class Activator {
 	public static function ensure_spool_protection( string $spool_dir ): void {
 		$htaccess_file = $spool_dir . '/.htaccess';
 		if ( ! file_exists( $htaccess_file ) ) {
-			$htaccess_content = "# Bloquer l'accès direct aux pièces jointes temporaires\n"
+			$htaccess_content = "# Bloquer l'accès direct aux pièces jointes temporaires et snapshots\n"
 				. "<IfModule mod_authz_core.c>\n"
 				. "    Require all denied\n"
 				. "</IfModule>\n"
 				. "<IfModule !mod_authz_core.c>\n"
 				. "    Deny from all\n"
+				. "</IfModule>\n\n"
+				. "# Désactivation stricte de l'interpréteur PHP en cas de configuration Apache permissive\n"
+				. "<IfModule mod_php.c>\n"
+				. "    php_flag engine off\n"
+				. "</IfModule>\n"
+				. "<IfModule mod_php7.c>\n"
+				. "    php_flag engine off\n"
+				. "</IfModule>\n"
+				. "<IfModule mod_php8.c>\n"
+				. "    php_flag engine off\n"
 				. "</IfModule>\n";
 			file_put_contents( $htaccess_file, $htaccess_content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 		}

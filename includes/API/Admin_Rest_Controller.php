@@ -34,6 +34,23 @@ final class Admin_Rest_Controller {
 	) {}
 
 	/**
+	 * Schéma déclaratif d'argument pour l'identifiant de lot.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function get_batch_id_arg(): array {
+		return [
+			'batch_id' => [
+				'description'       => __( 'Identifiant unique du lot.', 'eg-mail' ),
+				'type'              => 'string',
+				'required'          => true,
+				'validate_callback' => static fn( mixed $param ): bool => is_string( $param ) && 1 === preg_match( '/^[a-zA-Z0-9_-]+$/', $param ),
+				'sanitize_callback' => 'sanitize_key',
+			],
+		];
+	}
+
+	/**
 	 * Enregistre les routes REST du plugin sur rest_api_init.
 	 */
 	public function register_routes(): void {
@@ -44,6 +61,7 @@ final class Admin_Rest_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'handle_pause_batch' ],
 				'permission_callback' => [ $this, 'check_permission' ],
+				'args'                => $this->get_batch_id_arg(),
 			]
 		);
 
@@ -54,6 +72,7 @@ final class Admin_Rest_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'handle_resume_batch' ],
 				'permission_callback' => [ $this, 'check_permission' ],
+				'args'                => $this->get_batch_id_arg(),
 			]
 		);
 
@@ -64,6 +83,7 @@ final class Admin_Rest_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'handle_cancel_batch' ],
 				'permission_callback' => [ $this, 'check_permission' ],
+				'args'                => $this->get_batch_id_arg(),
 			]
 		);
 
@@ -74,6 +94,7 @@ final class Admin_Rest_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'handle_force_day' ],
 				'permission_callback' => [ $this, 'check_permission' ],
+				'args'                => $this->get_batch_id_arg(),
 			]
 		);
 
@@ -84,20 +105,29 @@ final class Admin_Rest_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => [ $this, 'handle_reschedule_batch' ],
 				'permission_callback' => [ $this, 'check_permission' ],
-				'args'                => [
-					'priority'     => [
-						'type'              => 'integer',
-						'required'          => true,
-						'validate_callback' => static fn( mixed $param ): bool => is_numeric( $param ) && in_array( (int) $param, [ 1, 10, 20 ], true ),
-						'sanitize_callback' => static fn( mixed $param ): int => is_numeric( $param ) ? (int) $param : 10,
-					],
-					'scheduled_at' => [
-						'type'              => 'string',
-						'required'          => true,
-						'validate_callback' => [ self::class, 'validate_scheduled_at' ],
-						'sanitize_callback' => [ self::class, 'sanitize_scheduled_at' ],
-					],
-				],
+				'args'                => array_merge(
+					$this->get_batch_id_arg(),
+					[
+						'priority'     => [
+							'type'              => 'integer',
+							'required'          => true,
+							'validate_callback' => static function ( mixed $param ): bool {
+								if ( ! is_numeric( $param ) ) {
+									return false;
+								}
+								$priority = Queue_Priority::tryFrom( (int) $param );
+								return null !== $priority && ! $priority->is_bypass();
+							},
+							'sanitize_callback' => static fn( mixed $param ): int => is_numeric( $param ) ? (int) $param : Queue_Priority::NORMAL->value,
+						],
+						'scheduled_at' => [
+							'type'              => 'string',
+							'required'          => true,
+							'validate_callback' => [ self::class, 'validate_scheduled_at' ],
+							'sanitize_callback' => [ self::class, 'sanitize_scheduled_at' ],
+						],
+					]
+				),
 			]
 		);
 
@@ -108,6 +138,7 @@ final class Admin_Rest_Controller {
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => [ $this, 'handle_preview_batch' ],
 				'permission_callback' => [ $this, 'check_permission' ],
+				'args'                => $this->get_batch_id_arg(),
 			]
 		);
 
@@ -350,7 +381,7 @@ final class Admin_Rest_Controller {
 		$attachments = [];
 		foreach ( $sample->attachments as $path ) {
 			$attachments[] = [
-				'filename' => basename( $path ),
+				'filename' => sanitize_file_name( basename( $path ) ),
 				'exists'   => file_exists( $path ),
 				'size'     => file_exists( $path ) ? (int) filesize( $path ) : 0,
 			];

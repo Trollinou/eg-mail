@@ -147,7 +147,7 @@ class Settings_Page {
 				</tr>
 				<tr>
 					<th scope="row"><label for="smtp_password"><?php esc_html_e( 'Mot de passe SMTP', 'eg-mail' ); ?></label></th>
-					<td><input name="smtp_password" type="password" id="smtp_password" value="<?php echo esc_attr( (string) $current['smtp_password'] ); ?>" class="regular-text" autocomplete="new-password" /></td>
+					<td><input name="smtp_password" type="password" id="smtp_password" value="" class="regular-text" autocomplete="new-password" placeholder="<?php echo ! empty( $current['smtp_password'] ) ? '••••••••' : ''; ?>" /></td>
 				</tr>
 				<tr>
 					<th scope="row"><label for="smtp_from_email"><?php esc_html_e( 'E-mail d\'expédition par défaut', 'eg-mail' ); ?></label></th>
@@ -193,6 +193,11 @@ class Settings_Page {
 			return null;
 		}
 
+		$submitted_password = Request::post_string( 'smtp_password' );
+		$smtp_password      = '' !== $submitted_password
+			? $submitted_password
+			: (string) $this->settings->get( 'smtp_password', '' );
+
 		$new_settings = [
 			'smtp_force'         => Request::post_bool( 'smtp_force' ),
 			'smtp_host'          => Request::post_string( 'smtp_host' ),
@@ -200,7 +205,7 @@ class Settings_Page {
 			'smtp_encryption'    => Request::post_key( 'smtp_encryption', 'tls' ),
 			'smtp_auth'          => Request::post_bool( 'smtp_auth' ),
 			'smtp_username'      => Request::post_string( 'smtp_username' ),
-			'smtp_password'      => Request::post_string( 'smtp_password' ),
+			'smtp_password'      => $smtp_password,
 			'smtp_from_email'    => Request::post_email( 'smtp_from_email' ),
 			'smtp_from_name'     => Request::post_string( 'smtp_from_name' ),
 			'quota_minute_day'   => max( 1, Request::post_int( 'quota_minute_day', 10 ) ),

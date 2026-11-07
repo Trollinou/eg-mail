@@ -336,7 +336,7 @@ class Worker {
 		$next_scheduled = wp_next_scheduled( 'eg_mail_cron_worker' );
 
 		if ( false !== $next_scheduled && ( $next_scheduled < $min_next_run || 0 !== ( $next_scheduled % 60 ) ) ) {
-			$aligned_next_run = (int) ( floor( $min_next_run / 60 ) * 60 );
+			$aligned_next_run = (int) ( ceil( $min_next_run / 60 ) * 60 );
 			if ( $aligned_next_run <= $now ) {
 				$aligned_next_run += 60;
 			}

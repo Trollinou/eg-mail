@@ -20,6 +20,9 @@ class Attachment_Spooler {
 
 		if ( ! is_dir( $spool_dir ) ) {
 			wp_mkdir_p( $spool_dir );
+		}
+
+		if ( ! file_exists( $spool_dir . '/.htaccess' ) || ! file_exists( $spool_dir . '/index.php' ) ) {
 			Activator::ensure_spool_protection( $spool_dir );
 		}
 
@@ -44,8 +47,14 @@ class Attachment_Spooler {
 
 		$spool_dir  = $this->get_spool_dir();
 		$clean_name = sanitize_file_name( basename( $source_path ) );
-		$dest_name  = $hash . '_' . $clean_name;
-		$dest_path  = $spool_dir . '/' . $dest_name;
+
+		// Neutralisation systématique des extensions exécutables pour prévenir les attaques RCE.
+		if ( 1 === preg_match( '/\.(php[0-9]?|phtml|phar|pl|py|cgi|asp|jsp|sh|bash)$/i', $clean_name ) ) {
+			$clean_name .= '.bin';
+		}
+
+		$dest_name = $hash . '_' . $clean_name;
+		$dest_path = $spool_dir . '/' . $dest_name;
 
 		// Si le fichier existe déjà dans le spool, on réutilise l'existant (déduplication).
 		if ( file_exists( $dest_path ) ) {

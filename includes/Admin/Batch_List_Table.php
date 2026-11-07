@@ -156,7 +156,7 @@ class Batch_List_Table {
 		echo '<div class="eg-mail-modal__field" id="eg-mail-preview-attachments-container" style="display: none;"><strong>' . esc_html__( 'Pièces jointes : ', 'eg-mail' ) . '</strong><ul id="eg-mail-preview-attachments"></ul></div>';
 		echo '<hr style="margin: 15px 0;">';
 		echo '<div class="eg-mail-modal__content-wrapper">';
-		echo '<iframe id="eg-mail-preview-iframe" class="eg-mail-modal__iframe" sandbox="allow-same-origin" title="' . esc_attr__( 'Corps du message', 'eg-mail' ) . '"></iframe>';
+		echo '<iframe id="eg-mail-preview-iframe" class="eg-mail-modal__iframe" sandbox="allow-popups" title="' . esc_attr__( 'Corps du message', 'eg-mail' ) . '"></iframe>';
 		echo '</div>';
 		echo '</div>';
 		echo '<div class="eg-mail-modal__footer">';

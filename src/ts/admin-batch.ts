@@ -329,9 +329,13 @@ document.addEventListener( 'DOMContentLoaded', () => {
 
 					if ( attachContainer && attachList ) {
 						if ( json.attachments && json.attachments.length > 0 ) {
-							attachList.innerHTML = json.attachments
-								.map( ( a ) => `<li>📎 ${ a.filename } (${ Math.round( a.size / 1024 ) } Ko)</li>` )
-								.join( '' );
+							attachList.replaceChildren();
+							for ( const a of json.attachments ) {
+								const li = document.createElement( 'li' );
+								const sizeKb = Math.round( a.size / 1024 );
+								li.textContent = `📎 ${ a.filename } (${ sizeKb } Ko)`;
+								attachList.appendChild( li );
+							}
 							attachContainer.style.display = 'block';
 						} else {
 							attachContainer.style.display = 'none';
